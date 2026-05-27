@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import path from 'path';
+import fs from 'fs';
 
 // Carrega o .env.local manualmente
 const __filename = fileURLToPath(import.meta.url);
@@ -29,7 +30,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Configuração CORS - mais permissiva em produção
 const corsOptions = {
   origin: isProduction 
-    ? ['https://sensopro-app.vercel.app'] // Substitua pela sua URL do Vercel
+    ? true // Aceita qualquer origem em produção
     : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -44,12 +45,21 @@ app.use(cookieParser());
 app.use(express.json());
 
 // ✅ Servir arquivos estáticos do frontend
-// Em produção: /vercel/output/static/client/dist
-// Em desenvolvimento: ../../client/dist
 let clientDistPath = path.join(__dirname, '../../client/dist');
-if (isProduction && process.env.VERCEL) {
-  // No Vercel, o path é diferente
-  clientDistPath = path.join(__dirname, '../..', 'client', 'dist');
+
+// Tenta encontrar o caminho correto do client/dist
+const possiblePaths = [
+  path.join(__dirname, '../../client/dist'),
+  path.join(__dirname, '../..', 'client', 'dist'),
+  path.join(process.cwd(), 'client', 'dist'),
+];
+
+for (const p of possiblePaths) {
+  if (fs.existsSync(p)) {
+    clientDistPath = p;
+    console.log('✅ Encontrado client/dist em:', clientDistPath);
+    break;
+  }
 }
 
 console.log('📂 Servindo frontend de:', clientDistPath);
@@ -75,8 +85,12 @@ app.use('/api/trpc', createExpressMiddleware({
 // ✅ SPA Fallback - redireciona rotas não encontradas para index.html
 app.use('*', (req, res) => {
   const indexPath = path.join(clientDistPath, 'index.html');
-  console.log('📄 Servindo SPA fallback:', indexPath);
-  res.sendFile(indexPath);
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    console.error('❌ index.html não encontrado em:', indexPath);
+    res.status(404).json({ error: 'Página não encontrada' });
+  }
 });
 
 const server = app.listen(PORT, () => {

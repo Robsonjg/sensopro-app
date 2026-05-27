@@ -1,0 +1,7 @@
+.git
+.github
+.vscode
+node_modules/.cache
+.manus
+.manus-logs
+*.log

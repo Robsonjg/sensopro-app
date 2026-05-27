@@ -1,27 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "node vercel-build.js",
-  "builds": [
-    {
-      "src": "server/_core/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["drizzle/**", "shared/**", "client/dist/**"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/trpc/(.*)",
-      "dest": "server/_core/index.ts"
-    },
-    {
-      "src": "/health",
-      "dest": "server/_core/index.ts"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "server/_core/index.ts"
-    }
-  ]
+  "buildCommand": "pnpm install && pnpm build",
+  "installCommand": "pnpm install"
 }

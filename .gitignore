@@ -30,3 +30,4 @@ Thumbs.db
 # Manus específico
 .manus/
 .manus-logs/".project-config.json" 
+".project-config.json" 

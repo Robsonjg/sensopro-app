@@ -43,7 +43,7 @@ export default defineConfig({
 
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        target: process.env.VITE_API_URL || "http://localhost:3001",
         changeOrigin: true,
       },
     },
@@ -53,4 +53,9 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
+
+  // IMPORTANTE: Define variáveis para produção
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || '')
+  }
 });

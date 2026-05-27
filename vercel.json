@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "buildCommand": "node vercel-build.js",
+  "builds": [
+    {
+      "src": "server/_core/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["drizzle/**", "shared/**"]
+      }
+    },
+    {
+      "src": "client/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/trpc/(.*)",
+      "dest": "server/_core/index.ts"
+    },
+    {
+      "src": "/health",
+      "dest": "server/_core/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/client/$1"
+    }
+  ]
+}

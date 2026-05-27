@@ -13,6 +13,7 @@ console.log('🔧 Configuração carregada:');
 console.log('   DATABASE_URL:', process.env.DATABASE_URL ? '✅ Presente' : '❌ Ausente');
 console.log('   JWT_SECRET:', process.env.JWT_SECRET ? '✅ Presente' : '❌ Ausente');
 console.log('   PORT:', process.env.PORT || 3001);
+console.log('   NODE_ENV:', process.env.NODE_ENV || 'development');
 
 import express from 'express';
 import cookieParser from 'cookie-parser';
@@ -23,26 +24,39 @@ import { createContext } from './context';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// Configuração CORS correta - ACEITANDO CREDENCIAIS
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'],
-  credentials: true,  // ← CRÍTICO: permite envio de cookies
+// Configuração CORS - mais permissiva em produção
+const corsOptions = {
+  origin: isProduction 
+    ? ['https://sensopro-app.vercel.app'] // Substitua pela sua URL do Vercel
+    : ['http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000'],
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cookie', 'X-Requested-With'],
   exposedHeaders: ['Set-Cookie'],
-}));
+};
 
-// Middleware para OPTIONS (pre-flight)
-app.options('*', cors());
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(cookieParser());
 app.use(express.json());
 
-// ✅ NOVO: Servir arquivos estáticos do frontend
-const clientDistPath = path.join(__dirname, '../../client/dist');
+// ✅ Servir arquivos estáticos do frontend
+// Em produção: /vercel/output/static/client/dist
+// Em desenvolvimento: ../../client/dist
+let clientDistPath = path.join(__dirname, '../../client/dist');
+if (isProduction && process.env.VERCEL) {
+  // No Vercel, o path é diferente
+  clientDistPath = path.join(__dirname, '../..', 'client', 'dist');
+}
+
 console.log('📂 Servindo frontend de:', clientDistPath);
-app.use(express.static(clientDistPath));
+app.use(express.static(clientDistPath, { 
+  maxAge: '1d',
+  etag: false 
+}));
 
 // Rota de health check
 app.get('/health', (req, res) => {
@@ -58,9 +72,11 @@ app.use('/api/trpc', createExpressMiddleware({
   },
 }));
 
-// ✅ NOVO: SPA Fallback - redireciona rotas não encontradas para index.html
+// ✅ SPA Fallback - redireciona rotas não encontradas para index.html
 app.use('*', (req, res) => {
-  res.sendFile(path.join(clientDistPath, 'index.html'));
+  const indexPath = path.join(clientDistPath, 'index.html');
+  console.log('📄 Servindo SPA fallback:', indexPath);
+  res.sendFile(indexPath);
 });
 
 const server = app.listen(PORT, () => {
@@ -68,6 +84,7 @@ const server = app.listen(PORT, () => {
   console.log(`📡 API tRPC: http://localhost:${PORT}/api/trpc`);
   console.log(`🔐 Login admin: http://localhost:3000/admin/login\n`);
   console.log(`📋 CORS configurado com credentials: true`);
+  console.log(`📋 Ambiente: ${isProduction ? 'PRODUÇÃO' : 'DESENVOLVIMENTO'}`);
 });
 
 process.on('SIGTERM', () => {

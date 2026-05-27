@@ -1,9 +1,99 @@
-node_modules/ 
-.env 
-.env.local 
-.project-config.json 
-.manus/ 
-.manus-logs/ 
-dist/ 
-.vite/ 
-.vercel/ 
+# ============================================
+# DEPENDÊNCIAS (NÃO ignorar - Vercel precisa)
+# ============================================
+# node_modules/  ← COMENTADO - NÃO ignorar
+
+# ============================================
+# BUILD OUTPUTS (NÃO ignorar - Vercel precisa)
+# ============================================
+# dist/  ← COMENTADO - NÃO ignorar
+# build/  ← COMENTADO
+
+# ============================================
+# ARQUIVOS DO MANUS (APENAS ESTES)
+# ============================================
+.project-config.json
+.manus/
+.manus-logs/
+
+# ============================================
+# ARQUIVOS DE AMBIENTE (podem ser ignorados)
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.production
+
+# ============================================
+# SISTEMA OPERACIONAL
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# ============================================
+# IDE E EDITORES
+# ============================================
+.vscode/
+.idea/
+*.sublime-*
+.project
+.classpath
+.settings/
+
+# ============================================
+# LOGS
+# ============================================
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ============================================
+# CACHE
+# ============================================
+.cache/
+.parcel-cache/
+.next/
+.nuxt/
+*.tsbuildinfo
+.vite/
+.turbo/
+
+# ============================================
+# ARQUIVOS TEMPORÁRIOS
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ============================================
+# COBERTURA DE TESTES
+# ============================================
+coverage/
+.nyc_output/
+
+# ============================================
+# VERIFICADORES DE CÓDIGO
+# ============================================
+.eslintcache
+.stylelintcache
+
+# ============================================
+# ARQUIVOS ESPECÍFICOS DO PROJETO
+# ============================================
+# Migrações geradas (commit normalmente)
+# drizzle/migrations/ - NÃO ignorar
+
+# Patches (commit normalmente)
+# patches/ - NÃO ignorar
+node_modules

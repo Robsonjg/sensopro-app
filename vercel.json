@@ -6,12 +6,8 @@
       "src": "server/_core/index.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["drizzle/**", "shared/**"]
+        "includeFiles": ["drizzle/**", "shared/**", "client/dist/**"]
       }
-    },
-    {
-      "src": "client/**",
-      "use": "@vercel/static"
     }
   ],
   "routes": [
@@ -25,7 +21,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/client/$1"
+      "dest": "server/_core/index.ts"
     }
   ]
 }

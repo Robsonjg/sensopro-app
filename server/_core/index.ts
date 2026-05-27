@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { config } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import path from 'path';
 
 // Carrega o .env.local manualmente
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +39,11 @@ app.options('*', cors());
 app.use(cookieParser());
 app.use(express.json());
 
+// ✅ NOVO: Servir arquivos estáticos do frontend
+const clientDistPath = path.join(__dirname, '../../client/dist');
+console.log('📂 Servindo frontend de:', clientDistPath);
+app.use(express.static(clientDistPath));
+
 // Rota de health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
@@ -52,9 +58,9 @@ app.use('/api/trpc', createExpressMiddleware({
   },
 }));
 
-// Rota de fallback
+// ✅ NOVO: SPA Fallback - redireciona rotas não encontradas para index.html
 app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Rota não encontrada' });
+  res.sendFile(path.join(clientDistPath, 'index.html'));
 });
 
 const server = app.listen(PORT, () => {

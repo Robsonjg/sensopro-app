@@ -1,15 +1,13 @@
 // vercel-build.js
 import { execSync } from 'child_process';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 console.log('🚀 Building SensoPro for Vercel...');
-console.log('📂 Directory:', process.cwd());
 
 try {
+  // Install with strict lockfile
+  console.log('📦 Installing dependencies...');
+  execSync('pnpm install --frozen-lockfile=false', { stdio: 'inherit' });
+
   // Build backend
   console.log('📦 Building backend...');
   execSync('pnpm build:backend', { stdio: 'inherit', env: { ...process.env, NODE_ENV: 'production' } });

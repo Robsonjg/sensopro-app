@@ -1,34 +1,9 @@
-# Dependências
-node_modules/
-.pnpm-store/
-
-# Build
-dist/
-dist/public/
-build/
-
-# Ambiente
-.env
-.env.local
-.env.production
-
-# Logs
-*.log
-npm-debug.log*
-pnpm-debug.log*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Manus específico
-.manus/
-.manus-logs/".project-config.json" 
-".project-config.json" 
+node_modules/ 
+.env 
+.env.local 
 .project-config.json 
+.manus/ 
+.manus-logs/ 
+dist/ 
+.vite/ 
+.vercel/ 

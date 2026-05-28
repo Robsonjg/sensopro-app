@@ -1,137 +1,56 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-
-@custom-variant dark (&:is(.dark *));
-
-@theme inline {
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius: 0.5rem;
-
-  --color-background: oklch(0.985 0.002 247);
-  --color-foreground: oklch(0.18 0.015 247);
-  --color-card: oklch(1 0 0);
-  --color-card-foreground: oklch(0.18 0.015 247);
-  --color-popover: oklch(1 0 0);
-  --color-popover-foreground: oklch(0.18 0.015 247);
-  --color-primary: oklch(0.56 0.17 15);  /* FEA Rosa #E63E6D */
-  --color-primary-foreground: oklch(0.98 0.005 15);
-  --color-secondary: oklch(0.25 0.08 260);  /* FEA Azul Marinho #1A2B5E */
-  --color-secondary-foreground: oklch(0.98 0.005 260);
-  --color-muted: oklch(0.94 0.01 247);
-  --color-muted-foreground: oklch(0.52 0.02 247);
-  --color-accent: oklch(0.56 0.17 15);  /* FEA Rosa */
-  --color-accent-foreground: oklch(0.98 0.005 15);
-  --color-destructive: oklch(0.55 0.22 25);
-  --color-destructive-foreground: oklch(0.98 0.005 25);
-  --color-border: oklch(0.88 0.01 247);
-  --color-input: oklch(0.88 0.01 247);
-  --color-ring: oklch(0.56 0.17 15);  /* FEA Rosa */
-  --color-chart-1: oklch(0.56 0.17 15);  /* FEA Rosa */
-  --color-chart-2: oklch(0.25 0.08 260);  /* FEA Azul Marinho */
-  --color-chart-3: oklch(0.65 0.18 145);
-  --color-chart-4: oklch(0.72 0.18 60);
-  --color-chart-5: oklch(0.62 0.22 25);
-  --color-sidebar: oklch(0.18 0.02 270);
-  --color-sidebar-foreground: oklch(0.88 0.01 270);
-  --color-sidebar-primary: oklch(0.72 0.12 270);
-  --color-sidebar-primary-foreground: oklch(0.18 0.02 270);
-  --color-sidebar-accent: oklch(0.28 0.04 270);
-  --color-sidebar-accent-foreground: oklch(0.88 0.01 270);
-  --color-sidebar-border: oklch(0.28 0.03 270);
-  --color-sidebar-ring: oklch(0.72 0.12 270);
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-  .container {
-    @apply mx-auto px-4;
-    max-width: 1280px;
-  }
-  .flex {
-    min-width: 0;
-    min-height: 0;
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 340 82% 52%;
+    --primary-foreground: 210 40% 98%;
   }
 }
 
-/* ─── Slider elegante ─────────────────────────────────────────────────────── */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* Slider customizado */
 input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
-  width: 100%;
-  height: 6px;
-  border-radius: 9999px;
-  background: oklch(0.88 0.01 247);
-  outline: none;
+  background: transparent;
   cursor: pointer;
-  transition: background 0.2s;
+  width: 100%;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+  background: #e2e8f0;
+  height: 4px;
+  border-radius: 9999px;
 }
 
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 22px;
-  height: 22px;
+  margin-top: -8px;
+  background-color: #e63e6d;
+  height: 20px;
+  width: 20px;
   border-radius: 50%;
-  background: oklch(0.38 0.12 270);
-  box-shadow: 0 2px 8px oklch(0.38 0.12 270 / 0.35);
+  border: 2px solid white;
   cursor: pointer;
-  transition: transform 0.15s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.15s;
-}
-
-input[type="range"]::-webkit-slider-thumb:hover {
-  transform: scale(1.15);
-  box-shadow: 0 4px 16px oklch(0.38 0.12 270 / 0.45);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 22px;
-  height: 22px;
-  border: none;
-  border-radius: 50%;
-  background: oklch(0.38 0.12 270);
-  box-shadow: 0 2px 8px oklch(0.38 0.12 270 / 0.35);
-  cursor: pointer;
-}
-
-/* ─── Scrollbar elegante ──────────────────────────────────────────────────── */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: oklch(0.78 0.01 247);
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.62 0.02 247);
-}
-
-/* ─── Animações ───────────────────────────────────────────────────────────── */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.animate-fade-in {
-  animation: fadeIn 0.3s cubic-bezier(0.23, 1, 0.32, 1) both;
-}
-
-@keyframes slideInRight {
-  from { opacity: 0; transform: translateX(16px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-.animate-slide-in {
-  animation: slideInRight 0.25s cubic-bezier(0.23, 1, 0.32, 1) both;
 }

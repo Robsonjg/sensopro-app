@@ -45,7 +45,7 @@ A one-time setup walkthrough — do all three steps in one pass; they're a singl
 
 ```ts
 import { parse as parseCookie } from "cookie";
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME } from "../shared/const";
 import { createHeartbeatJob } from "../_core/heartbeat";
 
 const sessionToken = parseCookie(ctx.req.headers.cookie ?? "")[COOKIE_NAME] ?? "";

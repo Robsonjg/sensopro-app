@@ -1,4 +1,4 @@
-import { NOT_ADMIN_ERR_MSG } from '@shared/const';
+import { NOT_ADMIN_ERR_MSG } from '../../shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext, AdminContext } from "./context";

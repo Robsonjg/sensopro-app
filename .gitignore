@@ -105,4 +105,12 @@ echo "# Manus specific" >> .gitignore
 echo "__manus__/" >> .gitignore
 echo ".manus/" >> .gitignore
 echo ".manus-logs/" >> .gitignore
-echo ".project-config.json" >> .gitignore
+echo ".project-config.json" >> .gitignore"" 
+"# Build outputs" 
+"dist/" 
+"" 
+"# Manus specific" 
+"__manus__/" 
+".manus/" 
+".manus-logs/" 
+".project-config.json" 

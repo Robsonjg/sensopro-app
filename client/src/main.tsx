@@ -44,7 +44,6 @@ const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: getApiUrl(),
-      transformer: superjson,
       fetch: (url, options) => {
         return fetch(url, {
           ...options,

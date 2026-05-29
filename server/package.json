@@ -5,10 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "cross-env NODE_ENV=development tsx watch _core/index.ts",
-    "build": "esbuild _core/index.ts --platform=node --bundle --platform=node --packages=external --format=esm --outdir=dist",
-    "start": "cross-env NODE_ENV=production node dist/index.js",
-    "check": "tsc --noEmit",
-    "format": "prettier --write ."
+    "build": "esbuild _core/index.ts --platform=node --bundle --packages=external --format=esm --outdir=dist",
+    "start": "cross-env NODE_ENV=production node dist/index.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",

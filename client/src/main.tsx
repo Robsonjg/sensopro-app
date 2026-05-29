@@ -16,15 +16,24 @@ const queryClient = new QueryClient({
   },
 });
 
+// URL da API - dinâmica por ambiente
+const getApiUrl = () => {
+  if (typeof window !== "undefined" && window.location.hostname === "localhost") {
+    return "http://localhost:3001/api/trpc";
+  }
+  // Em produção, use a mesma origem
+  return `${window.location.origin}/api/trpc`;
+};
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      url: "http://localhost:3001/api/trpc",
+      url: getApiUrl(),
       transformer: superjson,
       fetch: (url, options) => {
         return fetch(url, {
           ...options,
-          credentials: "include",  // ← Mantém isso
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
@@ -34,7 +43,10 @@ const trpcClient = trpc.createClient({
   ],
 });
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
+const root = document.getElementById("root");
+if (!root) throw new Error("Root element not found");
+
+ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>

@@ -26,24 +26,35 @@ const queryClient = new QueryClient({
 
 // URL da API - dinâmica por ambiente
 const getApiUrl = () => {
+  // 1. Verificar variável de ambiente
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl) {
+    console.log("📡 API URL (env):", envUrl);
+    return envUrl;
+  }
+
+  // 2. Fallback para localhost em desenvolvimento
   const isDev = typeof window !== "undefined" && 
                 (window.location.hostname === "localhost" || 
                  window.location.hostname === "127.0.0.1");
   
   if (isDev) {
-    return "http://localhost:3001/api/trpc";
+    const url = "http://localhost:3001/api/trpc";
+    console.log("📡 API URL (dev):", url);
+    return url;
   }
   
-  // Em produção, use a mesma origem
-  return `${window.location.origin}/api/trpc`;
+  // 3. Em produção, use a mesma origem
+  const url = `${window.location.origin}/api/trpc`;
+  console.log("📡 API URL (prod):", url);
+  return url;
 };
-
-console.log("📡 API URL:", getApiUrl());
 
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: getApiUrl(),
+      transformer: superjson,
       fetch: (url, options) => {
         return fetch(url, {
           ...options,

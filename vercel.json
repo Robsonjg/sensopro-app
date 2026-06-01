@@ -1,0 +1,7 @@
+{
+  "buildCommand": "npm run build:client",
+  "outputDirectory": "client/dist",
+  "env": {
+    "VITE_API_URL": "@railway_url"
+  }
+}

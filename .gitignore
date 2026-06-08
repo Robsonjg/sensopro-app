@@ -1,0 +1,43 @@
+# Dependências
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Ambiente
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cache
+.cache/
+.vite/
+.turbo/
+*.tsbuildinfo
+
+# Temporários
+*.tmp
+*.temp
+*.bak
+
+# Testes
+coverage/.project-config.json 

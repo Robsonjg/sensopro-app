@@ -7,8 +7,7 @@
       "@/*": ["src/*"]
     }
   },
-  "include": [
-  "src",
-  "../shared/**/*.ts"
-]
+  "include": ["src"],
+  "exclude": ["../server", "../drizzle"]
 }
+

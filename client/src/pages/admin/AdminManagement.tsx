@@ -13,7 +13,7 @@ export default function AdminManagement() {
   const isEmailPasswordAdmin = !!adminMeQuery.data?.email;
 
   // Só carregar lista de admins se for admin email/senha
-  const { data: admins, isLoading, refetch } = trpc.adminAuth.listAll.useQuery(undefined, {
+  const { data: admins, isLoading, refetch } = trpc.adminAuth.list.useQuery(undefined, {
     enabled: isEmailPasswordAdmin,
   });
 

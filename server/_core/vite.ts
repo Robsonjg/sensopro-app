@@ -6,7 +6,10 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 
 export async function setupVite(app: Express, server: Server) {
+  const clientRoot = path.resolve(import.meta.dirname, "../..", "client");
   const vite = await createViteServer({
+    root: clientRoot,
+    configFile: path.join(clientRoot, "vite.config.ts"),
     server: {
       middlewareMode: true,
       hmr: { server },
@@ -17,14 +20,12 @@ export async function setupVite(app: Express, server: Server) {
 
   app.use(vite.middlewares);
 
-  app.use("/*", async (req, res, next) => {
+  app.use(/^(?!\/api).*/, async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
       const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
+        clientRoot,
         "index.html"
       );
 

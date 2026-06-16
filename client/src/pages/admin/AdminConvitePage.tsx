@@ -79,7 +79,10 @@ export default function AdminConvitePage() {
     
     setIsLoading(true);
     try {
-      await loginMutation.mutateAsync(credenciaisRegistradas);
+      await loginMutation.mutateAsync({
+        email: credenciaisRegistradas.email,
+        senha: credenciaisRegistradas.senha
+      });
       setLocation("/admin");
     } catch (err) {
       const error = err as TRPCClientError<any>;

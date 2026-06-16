@@ -1,5 +1,5 @@
-import { getLoginUrl } from "@/const";
-import { trpc } from '../../lib/trpc.js';
+import { getLoginUrl } from "../../../../shared/const";
+import { trpc } from '../../lib/trpc';
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
 
@@ -9,24 +9,6 @@ type UseAuthOptions = {
 };
 
 export function useAuth(options?: UseAuthOptions) {
-  // Para desenvolvimento local, retornar mock
-  const isLocal = typeof window !== 'undefined' && window.location.origin.includes('localhost');
-  
-  if (isLocal) {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return {
-      user: { id: 1, name: "Admin Teste", email: "admin@teste.com", role: "admin" },
-      loading: false,
-      error: null,
-      isAuthenticated: true,
-      refresh: () => {},
-      logout: () => {
-        console.log("Logout em desenvolvimento");
-        window.location.href = "/";
-      },
-    };
-  }
-  
   const { redirectOnUnauthenticated = false, redirectPath = getLoginUrl() } =
     options ?? {};
   const utils = trpc.useUtils();

@@ -32,10 +32,10 @@ interface Props {
 
 export default function ExperimentosList({ onSelect, onDashboard }: Props) {
   const utils = trpc.useUtils();
-  const { data: experimentos, isLoading } = trpc.experimentos.list.useQuery();
-  const createMut = trpc.experimentos.create.useMutation({
+  const { data: experimentos, isLoading } = trpc.experimentos.listar.useQuery();
+  const createMut = trpc.experimentos.criar.useMutation({
     onSuccess: () => {
-      utils.experimentos.list.invalidate();
+      utils.experimentos.listar.invalidate();
       setCreateOpen(false);
       setForm({ titulo: "", descricao: "" });
       toast.success("Experimento criado com sucesso!");
@@ -44,21 +44,21 @@ export default function ExperimentosList({ onSelect, onDashboard }: Props) {
   });
   const deleteMut = trpc.experimentos.delete.useMutation({
     onSuccess: () => {
-      utils.experimentos.list.invalidate();
+      utils.experimentos.listar.invalidate();
       toast.success("Experimento removido.");
     },
     onError: (e) => toast.error(e.message),
   });
   const ativarMut = trpc.experimentos.ativar.useMutation({
     onSuccess: () => {
-      utils.experimentos.list.invalidate();
+      utils.experimentos.listar.invalidate();
       toast.success("Experimento ativado!");
     },
     onError: (e) => toast.error(e.message),
   });
   const desativarMut = trpc.experimentos.desativar.useMutation({
     onSuccess: () => {
-      utils.experimentos.list.invalidate();
+      utils.experimentos.listar.invalidate();
       toast.success("Experimento desativado.");
     },
     onError: (e) => toast.error(e.message),

@@ -48,10 +48,10 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   const { data: exp, isLoading: expLoading } = trpc.experimentos.getById.useQuery({
     id: experimentoId,
   });
-  const { data: amostrasRaw, isLoading: amostrasLoading } = trpc.amostras.list.useQuery({
+  const { data: amostrasRaw, isLoading: amostrasLoading } = trpc.amostras.listar.useQuery({
     experimentoId,
   });
-  const { data: atributosRaw, isLoading: atributosLoading } = trpc.atributos.list.useQuery({
+  const { data: atributosRaw, isLoading: atributosLoading } = trpc.atributos.listar.useQuery({
     experimentoId,
   });
   const amostras = amostrasRaw ?? [];
@@ -61,7 +61,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   const updateExpMut = trpc.experimentos.update.useMutation({
     onSuccess: () => {
       utils.experimentos.getById.invalidate({ id: experimentoId });
-      utils.experimentos.list.invalidate();
+      utils.experimentos.listar.invalidate();
       setEditExpOpen(false);
       toast.success("Experimento atualizado!");
     },
@@ -70,14 +70,14 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   const ativarMut = trpc.experimentos.ativar.useMutation({
     onSuccess: () => {
       utils.experimentos.getById.invalidate({ id: experimentoId });
-      utils.experimentos.list.invalidate();
+      utils.experimentos.listar.invalidate();
       toast.success("Experimento ativado!");
     },
   });
   const desativarMut = trpc.experimentos.desativar.useMutation({
     onSuccess: () => {
       utils.experimentos.getById.invalidate({ id: experimentoId });
-      utils.experimentos.list.invalidate();
+      utils.experimentos.listar.invalidate();
       toast.success("Experimento desativado.");
     },
   });
@@ -85,7 +85,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   // Mutations amostras
   const createAmostraMut = trpc.amostras.create.useMutation({
     onSuccess: () => {
-      utils.amostras.list.invalidate({ experimentoId });
+      utils.amostras.listar.invalidate({ experimentoId });
       setAmostraModal({ open: false, editing: null });
       toast.success("Amostra adicionada!");
     },
@@ -93,7 +93,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const updateAmostraMut = trpc.amostras.update.useMutation({
     onSuccess: () => {
-      utils.amostras.list.invalidate({ experimentoId });
+      utils.amostras.listar.invalidate({ experimentoId });
       setAmostraModal({ open: false, editing: null });
       toast.success("Amostra atualizada!");
     },
@@ -101,7 +101,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const deleteAmostraMut = trpc.amostras.delete.useMutation({
     onSuccess: () => {
-      utils.amostras.list.invalidate({ experimentoId });
+      utils.amostras.listar.invalidate({ experimentoId });
       toast.success("Amostra removida.");
     },
     onError: (e) => toast.error(e.message),
@@ -110,7 +110,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   // Mutations atributos
   const createAtributoMut = trpc.atributos.create.useMutation({
     onSuccess: () => {
-      utils.atributos.list.invalidate({ experimentoId });
+      utils.atributos.listar.invalidate({ experimentoId });
       setAtributoModal({ open: false, editing: null });
       toast.success("Atributo adicionado!");
     },
@@ -118,7 +118,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const updateAtributoMut = trpc.atributos.update.useMutation({
     onSuccess: () => {
-      utils.atributos.list.invalidate({ experimentoId });
+      utils.atributos.listar.invalidate({ experimentoId });
       setAtributoModal({ open: false, editing: null });
       toast.success("Atributo atualizado!");
     },
@@ -126,17 +126,17 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const deleteAtributoMut = trpc.atributos.delete.useMutation({
     onSuccess: () => {
-      utils.atributos.list.invalidate({ experimentoId });
+      utils.atributos.listar.invalidate({ experimentoId });
       toast.success("Atributo removido.");
     },
     onError: (e) => toast.error(e.message),
   });
   const reorderAmostrasMut = trpc.amostras.reorder.useMutation({
-    onSuccess: () => utils.amostras.list.invalidate({ experimentoId }),
+    onSuccess: () => utils.amostras.listar.invalidate({ experimentoId }),
     onError: (e) => toast.error(e.message),
   });
   const reorderAtributosMut = trpc.atributos.reorder.useMutation({
-    onSuccess: () => utils.atributos.list.invalidate({ experimentoId }),
+    onSuccess: () => utils.atributos.listar.invalidate({ experimentoId }),
     onError: (e) => toast.error(e.message),
   });
 
@@ -205,7 +205,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
     if (amostraModal.editing) {
       updateAmostraMut.mutate({ id: amostraModal.editing.id, ...amostraForm });
     } else {
-      createAmostraMut.mutate({ experimentoId, ...amostraForm, codigo: amostraForm.codigo ?? "", ordem });
+      createAmostraMut.mutate({ experimentoId, ...amostraForm, codigo: amostraForm.codigo || "", ordem });
     }
   }
 

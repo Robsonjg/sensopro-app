@@ -1,19 +1,23 @@
 {
+  "extends": "../tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
     "rootDir": "..",
-    "outDir": "./dist",
-    "strict": false,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "allowJs": true
+    "outDir": "dist",
+
+    "ignoreDeprecations": "5.0",
+    "module": "ESNext",
+    "moduleResolution": "Bundler"
+
+
   },
+
   "include": [
-    "./**/*.ts",
-    "../drizzle/**/*.ts",
+    "**/*.ts",
     "../shared/**/*.ts"
   ],
-  "exclude": ["dist", "node_modules"]
+  "exclude": [
+    "dist",
+    "../client",
+    "../node_modules"
+  ]
 }

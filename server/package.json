@@ -3,9 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+
+
   "scripts": {
-    "dev": "tsx watch _core/index.ts",
-    "build": "tsc"
+
+    "dev": "tsx _core/index.ts",
+    "build": "tsc",
+    "start": "node dist/server/_core/index.js"
   },
   "dependencies": {
     "@types/bcrypt": "6.0.0",
@@ -16,6 +20,7 @@
     "dotenv": "^17.4.2",
     "drizzle-orm": "0.45.2",
     "express": "^5.2.1",
+    "nanoid": "^5.1.6",
     "postgres": "3.4.9",
     "zod": "4.4.3"
   },
@@ -26,3 +31,4 @@
     "tsx": "^4.22.4"
   }
 }
+

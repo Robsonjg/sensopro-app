@@ -1,7 +1,10 @@
 import { NOT_ADMIN_ERR_MSG } from '../../shared/const';
 import { initTRPC, TRPCError } from "@trpc/server";
 import type { TrpcContext, AdminContext } from "./context";
-import { getAdminById } from "../db";
+import { getAdminById } from "../db.js";
+
+
+
 
 // Removemos o bloco do transformer: superjson daqui
 const t = initTRPC.context<TrpcContext>().create();

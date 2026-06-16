@@ -33,7 +33,7 @@ const COLORS = [
 ];
 
 export default function DashboardView({ experimentoId, onSelectExp }: Props) {
-  const { data: allExps } = trpc.experimentos.list.useQuery();
+  const { data: allExps } = trpc.experimentos.listar.useQuery();
   const [selectedId, setSelectedId] = useState<number | null>(experimentoId);
 
   const activeId = selectedId ?? experimentoId;

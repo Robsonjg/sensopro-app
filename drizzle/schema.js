@@ -16,13 +16,11 @@ export const users = pgTable("users", {
 export const admins = pgTable("admins", {
     id: serial("id").primaryKey(),
     email: varchar("email", { length: 320 }).notNull().unique(),
-    // O TypeScript continua a ler .senhaHash, mas o Drizzle busca "senhahash" no Supabase
-    senhaHash: text("senhahash").notNull(),
+    senhaHash: text("senhaHash").notNull(),
     nome: varchar("nome", { length: 255 }),
     ativo: boolean("ativo").default(true).notNull(),
-    // O TypeScript continua a ler .criadoEm, mas o Drizzle busca "criadoem" no Supabase
-    criadoEm: timestamp("criadoem").defaultNow().notNull(),
-    atualizadoEm: timestamp("atualizadoem").defaultNow().notNull(),
+    criadoEm: timestamp("criadoEm").defaultNow().notNull(),
+    atualizadoEm: timestamp("atualizadoEm").defaultNow().notNull(),
 });
 // ─── Experimentos ────────────────────────────────────────────────────────────
 export const experimentos = pgTable("experimentos", {

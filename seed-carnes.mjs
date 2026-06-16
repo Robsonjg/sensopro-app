@@ -135,7 +135,7 @@ async function seedCarnes() {
 
     console.log("\n✅ Seed concluído com sucesso!");
     console.log(`\n📋 Experimento ID: ${expId}`);
-    console.log("🔗 Link de avaliação: http://localhost:3000/avaliar/analise-sensorial-de-carnes");
+    console.log("🔗 Link de avaliação: http://localhost:3000/avaliacao/analise-sensorial-de-carnes");
     
     // Mostrar resumo
     const amostrasCount = await sql`SELECT COUNT(*) FROM amostras WHERE "experimentoId" = ${expId}`;

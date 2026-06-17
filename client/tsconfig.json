@@ -6,7 +6,10 @@
     "ignoreDeprecations": "6.0",
     "types": ["vite/client"],
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@shared/*": ["../shared/*"],
+      "@server/*": ["../server/*"],
+      "@drizzle/*": ["../drizzle/*"]
     },
     "rootDir": "./src"
   },
@@ -21,3 +24,4 @@
     "../shared"
   ]
 }
+

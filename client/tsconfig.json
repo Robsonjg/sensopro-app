@@ -7,13 +7,17 @@
     "types": ["vite/client"],
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "rootDir": "./src"
   },
   "include": [
-    "src"
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/vite-env.d.ts"
   ],
   "exclude": [
     "../server",
-    "../drizzle"
+    "../drizzle",
+    "../shared"
   ]
 }

@@ -236,7 +236,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
 
   function copyLink() {
     if (!exp) return;
-    navigator.clipboard.writeText(`${window.location.origin}/avaliar/${exp.slug}`);
+    navigator.clipboard.writeText(`${window.location.origin}/avaliacao/${exp.slug}`);
     setCopied(true);
     toast.success("Link copiado!");
     setTimeout(() => setCopied(false), 2000);
@@ -320,7 +320,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
       <div className="bg-muted/40 rounded-xl px-4 py-3 flex items-center gap-3 mb-8 border border-border/60">
         <Share2 className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         <span className="text-sm text-muted-foreground font-mono flex-1 truncate">
-          {window.location.origin}/avaliar/{exp?.slug}
+          {window.location.origin}/avaliacao/{exp?.slug}
         </span>
         <Button size="sm" variant="ghost" className="rounded-full text-xs h-7" onClick={copyLink}>
           {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}

@@ -70,7 +70,7 @@ export default function ExperimentosList({ onSelect, onDashboard }: Props) {
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   function copyLink(slug: string, id: number) {
-    const url = `${window.location.origin}/avaliar/${slug}`;
+    const url = `${window.location.origin}/avaliacao/${slug}`;
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     toast.success("Link copiado!");
@@ -150,7 +150,7 @@ export default function ExperimentosList({ onSelect, onDashboard }: Props) {
               </div>
 
               <div className="text-xs text-muted-foreground font-mono bg-muted/40 rounded-lg px-2.5 py-1.5 truncate">
-                /avaliar/{exp.slug}
+                /avaliacao/{exp.slug}
               </div>
 
               <div className="flex flex-wrap gap-2 mt-auto">

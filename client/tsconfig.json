@@ -3,11 +3,22 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "baseUrl": ".",
+    
+    // Boa Prática: Silencia o aviso de depreciação exigido pelo TypeScript moderno
+    "ignoreDeprecations": "6.0", 
+    
+    "types": ["vite/client"],
     "paths": {
-      "@/*": ["src/*"]
-    }
+      "@/*": ["src/*"],
+      "@shared/*": ["../shared/*"],
+      "@server/*": ["../server/*"],
+      "@drizzle/*": ["../drizzle/*"]
+    },
+    "rootDir": "./src"
   },
-  "include": ["src"],
-  "exclude": ["../server", "../drizzle"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/vite-env.d.ts"
+  ]
 }
-

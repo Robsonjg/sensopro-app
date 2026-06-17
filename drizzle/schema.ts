@@ -13,6 +13,7 @@ import {
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 
+// ─── Users ───────────────────────────────────────────────────────────────────
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
@@ -29,19 +30,18 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 // ─── Admins ──────────────────────────────────────────────────────────────────
-// Mude apenas o trecho da tabela admins dentro de drizzle/schema.ts
 export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   
-  // O TypeScript continua a ler .senhaHash, mas o Drizzle busca "senhahash" no Supabase
-  senhaHash: text("senhahash").notNull(), 
+  // CORREÇÃO: Força o Drizzle a buscar "senhaHash" com o 'H' maiúsculo do banco
+  senhaHash: text("senhaHash").notNull(), 
   nome: varchar("nome", { length: 255 }),
   ativo: boolean("ativo").default(true).notNull(),
   
-  // O TypeScript continua a ler .criadoEm, mas o Drizzle busca "criadoem" no Supabase
-  criadoEm: timestamp("criadoem").defaultNow().notNull(),
-  atualizadoEm: timestamp("atualizadoem").defaultNow().notNull(),
+  // CORREÇÃO: Força o mapeamento do 'Em' maiúsculo do Supabase
+  criadoEm: timestamp("criadoEm").defaultNow().notNull(),
+  atualizadoEm: timestamp("atualizadoEm").defaultNow().notNull(),
 });
 
 export type Admin = typeof admins.$inferSelect;
@@ -143,7 +143,7 @@ export const convites = pgTable("convites", {
 export type Convite = typeof convites.$inferSelect;
 export type InsertConvite = typeof convites.$inferInsert;
 
-// Export all tables as a single object for convenience
+// Exportação unificada por conveniência
 export const schema = {
   users,
   admins,

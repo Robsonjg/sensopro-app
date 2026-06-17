@@ -1,24 +1,43 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Resolução de Módulos (Garante que o Vite e Monorepo funcionem juntos) */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": ".",
-    
-    // Boa Prática: Silencia o aviso de depreciação exigido pelo TypeScript moderno
-    "ignoreDeprecations": "6.0", 
-    
-    "types": ["vite/client"],
+
+    /* Define a raiz para a resolução de caminhos relativos do próprio cliente */
+    "baseUrl": ".", 
+    "ignoreDeprecations": "6.0", /* Silencia o aviso chato que vimos no começo */
+
+    /* Regras Estritas */
+    "strict": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Seus caminhos customizados (Apelidos/Aliases) */
     "paths": {
       "@/*": ["src/*"],
       "@shared/*": ["../shared/*"],
       "@server/*": ["../server/*"],
       "@drizzle/*": ["../drizzle/*"]
-    },
-    "rootDir": "./src"
+    }
   },
   "include": [
-    "src/**/*.ts",
-    "src/**/*.tsx",
-    "src/vite-env.d.ts"
+    "src/**/*.ts", 
+    "src/**/*.tsx", 
+    "src/vite-env.d.ts",
+    "../shared/**/*.ts"
   ]
 }

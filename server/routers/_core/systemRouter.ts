@@ -10,25 +10,29 @@ const router = t.router;
 export const systemRouter = router({
   // Uma rota simples para checar a saúde do sistema e do banco de dados
   status: publicProcedure.query(async () => {
-    try {
-      // 💡 Adicionado o await bem aqui antes de chamar o getDb()
-      const db = await getDb();
-      await db.execute(sql`SELECT 1`);
-      
-      return {
-        status: "online",
-        database: "connected",
-        timestamp: new Date().toISOString()
-      };
-    } catch (error) {
-      return {
-        status: "online",
-        database: "disconnected",
-        error: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString()
-      };
+  try {
+    const db = await getDb();
+
+    if (!db) {
+      throw new Error("Database não inicializado");
     }
-  }),
+
+    await db.execute(sql`SELECT 1`);
+
+    return {
+      status: "online",
+      database: "connected",
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    return {
+      status: "online",
+      database: "disconnected",
+      error: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
+    };
+  }
+}),
 
   // Rota de exemplo para retornar a versão do app
   version: publicProcedure.query(() => {

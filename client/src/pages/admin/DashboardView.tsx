@@ -55,7 +55,10 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
     const porAtributo = atributos.map((attr: any) => {
       const entry: Record<string, unknown> = { atributo: attr.nome };
       amostras.forEach((am: any) => {
-        const m = medias.find((x: any) => x.atributoId === attr.id && x.amostraId === am.id);
+        const m: any = medias.find((x: any) =>
+  x.atributoId === attr.id &&
+  x.amostraId === am.id
+);
         entry[am.codigo] = m ? Number(Number(m.media).toFixed(1)) : 0;
       });
       return entry;
@@ -96,7 +99,10 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
     atributos.forEach((attr: any) => {
       const row: Record<string, unknown> = { Atributo: attr.nome };
       amostras.forEach((am: any) => {
-        const m = data.medias.find((x: any) => x.atributoId === attr.id && x.amostraId === am.id);
+        const m: any = data.medias.find((x: any) =>
+  x.atributoId === attr.id &&
+  x.amostraId === am.id
+);
         row[am.codigo] = m ? Number(Number(m.media).toFixed(2)) : "-";
       });
       mediasRows.push(row);
@@ -105,7 +111,10 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Respostas");
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mediasRows), "Médias");
-    XLSX.writeFile(wb, `sensopro_${data.experimento.slug}_${Date.now()}.xlsx`);
+    XLSX.writeFile(
+  wb,
+  `sensopro_${data?.experimento?.slug ?? "experimento"}_${Date.now()}.xlsx`
+);
     toast.success("Planilha exportada com sucesso!");
   }
 

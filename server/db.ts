@@ -27,7 +27,7 @@ import {
   respostas,
   sessoes,
   users,
-} from "../drizzle/schema.js";
+} from "../drizzle/schema.js"; // Mantido .js pois o Node/TS em ESM exige a extensão de saída, mas a remoção do arquivo duplicado local garante que ele leia o build novo.
 
 import { ENV } from "./_core/env.js";
 
@@ -37,12 +37,16 @@ let _client: postgres.Sql | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      console.log("📡 Conectando ao Supabase...");
+      console.log("📡 Conectando ao Supabase via Pooler...");
+      
+      // CORREÇÃO CRUCIAL: Adicionado prepare: false para ser aceito pelo Transaction Pooler (6543)
       _client = postgres(process.env.DATABASE_URL, {
-        ssl: { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false },
+        prepare: false
       });
+      
       _db = drizzle(_client);
-      console.log("✅ Conectado ao Supabase!");
+      console.log("✅ Conectado ao Supabase com sucesso!");
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -315,14 +319,12 @@ export async function getDashboardData(experimentoId: number) {
   }
 
   try {
-    // Buscar total de sessões
     const totalResult = await db.execute(sql`
       SELECT COUNT(*) as count 
       FROM sessoes 
       WHERE "experimentoId" = ${experimentoId}
     `);
     
-    // Buscar sessões concluídas
     const concluidasResult = await db.execute(sql`
       SELECT COUNT(*) as count 
       FROM sessoes 
@@ -330,7 +332,6 @@ export async function getDashboardData(experimentoId: number) {
       AND finalizado = true
     `);
     
-    // Buscar tempo médio
     const tempoResult = await db.execute(sql`
       SELECT AVG("tempoTotal") as avg 
       FROM sessoes 

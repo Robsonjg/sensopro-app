@@ -34,15 +34,15 @@ export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   
-  // GARANTIA: Informa ao Drizzle o nome exato da coluna string no banco
-  senhaHash: text("senhaHash").notNull(),
+  // Mapeia a propriedade 'senhaHash' do código para procurar 'senhahash' ou 'senha_hash' no banco
+  senhaHash: text("senha_hash").notNull(), 
   
   nome: varchar("nome", { length: 255 }),
   ativo: boolean("ativo").default(true).notNull(),
   
-  // GARANTIA: Informa ao Drizzle o nome exato da coluna timestamp no banco
-  criadoEm: timestamp("criadoEm", { mode: "date" }).defaultNow().notNull(),
-  atualizadoEm: timestamp("atualizadoEm", { mode: "date" }).defaultNow().notNull(),
+  // Tente primeiro com tudo minúsculo direto caso o banco tenha convertido
+  criadoEm: timestamp("criado_em").defaultNow().notNull(),
+  atualizadoEm: timestamp("atualizado_em").defaultNow().notNull(),
 });
 
 export type Admin = typeof admins.$inferSelect;

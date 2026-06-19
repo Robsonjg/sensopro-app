@@ -7,16 +7,17 @@
     "server"
   ],
   "scripts": {
-  "build": "npm run build --workspace=server",
-  "start": "npm run start --workspace=server",
-  "db:push": "npm run drizzle-kit push --workspace=server",
-  "drizzle:push": "npm run drizzle-kit push --workspace=server"
+    "build": "npm run build --workspace=server",
+    "start": "npm run start --workspace=server",
+    "db:push": "npm run drizzle-kit push --workspace=server",
+    "drizzle:push": "npm run drizzle-kit push --workspace=server"
   },
   "devDependencies": {
     "@types/google.maps": "^3.65.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
+    "drizzle-kit": "^0.31.10",
     "typescript": "^6.0.3"
   },
   "dependencies": {

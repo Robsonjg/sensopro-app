@@ -17,7 +17,6 @@ import {
   finalizarSessao,
   getAdminByEmail,
   getAdminById,
-  getDashboardData,
   getExperimentoById,
   getExperimentoBySlug,
   getRespostasCompletas,
@@ -66,7 +65,7 @@ function getAdminIdFromReq(req: any): number | undefined {
 }
 
 /* =========================
-   CORE AUTH LOGIC (REUTILIZÁVEL)
+   AUTH CORE
 ========================= */
 
 const loginAdmin = async ({ input, ctx }: any) => {
@@ -123,7 +122,7 @@ const meAdmin = async ({ ctx }: any) => {
 };
 
 /* =========================
-   APP ROUTER
+   ROUTER
 ========================= */
 
 export const appRouter = router({
@@ -132,7 +131,7 @@ export const appRouter = router({
     return { status: "ok", uptime: process.uptime() };
   }),
 
-  /* -------- AUTH (REAL) -------- */
+/* -------- AUTH -------- */
   auth: router({
     login: publicProcedure
       .input(z.object({ email: z.string().email(), senha: z.string() }))
@@ -168,55 +167,60 @@ export const appRouter = router({
       }),
   }),
 
+/* -------- ADMIN AUTH -------- */
   adminAuth: router({
-  login: loginAdmin,
-  logout: logoutAdmin,
-  me: meAdmin,
+    login: publicProcedure
+      .input(z.object({ email: z.string().email(), senha: z.string() }))
+      .mutation(loginAdmin),
 
-  validateConvite: publicProcedure
-    .input(z.object({ codigo: z.string() }))
-    .query(async ({ input }) => {
-      const convite = await getConviteByCode(input.codigo);
+    logout: publicProcedure.mutation(logoutAdmin),
 
-      if (!convite || convite.usado) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
+    me: publicProcedure.query(meAdmin),
 
-      return { email: convite.email };
-    }),
+    validateConvite: publicProcedure
+      .input(z.object({ codigo: z.string() }))
+      .query(async ({ input }) => {
+        const convite = await getConviteByCode(input.codigo);
 
-  acceptConviteAndRegister: publicProcedure
-    .input(
-      z.object({
-        codigo: z.string(),
-        email: z.string().email(),
-        senha: z.string(),
-        nome: z.string(),
-      })
-    )
-    .mutation(async ({ input }) => {
-      const convite = await getConviteByCode(input.codigo);
+        if (!convite || convite.usado) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
 
-      if (!convite || convite.usado) {
-        throw new TRPCError({ code: "NOT_FOUND" });
-      }
+        return { email: convite.email };
+      }),
 
-      const hash = await bcrypt.hash(input.senha, 10);
+    acceptConviteAndRegister: publicProcedure
+      .input(
+        z.object({
+          codigo: z.string(),
+          email: z.string().email(),
+          senha: z.string(),
+          nome: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const convite = await getConviteByCode(input.codigo);
 
-      const admin = await createAdmin({
-        nome: input.nome,
-        email: input.email,
-        senhaHash: hash,
-        ativo: true,
-      });
+        if (!convite || convite.usado) {
+          throw new TRPCError({ code: "NOT_FOUND" });
+        }
 
-      await acceptConvite(input.codigo, admin.id);
+        const hash = await bcrypt.hash(input.senha, 10);
 
-      return { success: true };
-    }),
-}),
+        const admin = await createAdmin({
+          nome: input.nome,
+          email: input.email,
+          senhaHash: hash,
+          ativo: true,
+        });
 
-  /* -------- ADMINS -------- */
+        await acceptConvite(input.codigo, admin.id);
+
+        return { success: true };
+      }),
+  }),
+
+/* -------- ADMINS -------- */
   admin: router({
     list: protectedProcedure.query(() => listAdmins()),
 
@@ -251,7 +255,7 @@ export const appRouter = router({
       }),
   }),
 
-  /* -------- EXPERIMENTOS -------- */
+/* -------- EXPERIMENTOS -------- */
   experimentos: router({
     listar: protectedProcedure.query(() => listExperimentos()),
 
@@ -261,8 +265,8 @@ export const appRouter = router({
 
     criar: protectedProcedure
       .input(z.object({ titulo: z.string(), descricao: z.string().optional() }))
-      .mutation(({ input, ctx }) => {
-        return createExperimento({
+      .mutation(({ input, ctx }) =>
+        createExperimento({
           titulo: input.titulo,
           slug: input.titulo
             .toLowerCase()
@@ -271,8 +275,8 @@ export const appRouter = router({
           descricao: input.descricao ?? "",
           adminId: ctx.admin.id,
           criadoPor: ctx.admin.id,
-        });
-      }),
+        })
+      ),
 
     update: protectedProcedure
       .input(z.object({ id: z.number(), titulo: z.string().optional() }))
@@ -291,7 +295,7 @@ export const appRouter = router({
       .mutation(({ input }) => deleteExperimento(input.id)),
   }),
 
-  /* -------- AMOSTRAS -------- */
+/* -------- AMOSTRAS -------- */
   amostras: router({
     listar: publicProcedure
       .input(z.object({ experimentoId: z.number() }))
@@ -319,7 +323,7 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAmostra(input.id)),
   }),
 
-  /* -------- ATRIBUTOS -------- */
+/* -------- ATRIBUTOS -------- */
   atributos: router({
     listar: publicProcedure
       .input(z.object({ experimentoId: z.number() }))
@@ -340,7 +344,7 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAtributo(input.id)),
   }),
 
-  /* -------- DASHBOARD -------- */
+/* -------- DASHBOARD -------- */
   dashboard: router({
     getData: protectedProcedure
       .input(z.object({ experimentoId: z.number() }))
@@ -368,7 +372,7 @@ export const appRouter = router({
       }),
   }),
 
-  /* -------- AVALIAÇÃO -------- */
+/* -------- AVALIAÇÃO -------- */
   avaliacao: router({
     getExperimento: publicProcedure
       .input(z.object({ slug: z.string() }))

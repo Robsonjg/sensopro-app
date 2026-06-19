@@ -13,7 +13,7 @@
     "build:client": "npm run build --workspace=client",
     "build:server": "npm run build --workspace=server",
     "start": "npm run start --workspace=server",
-    "db:push": "drizzle-kit push --config=drizzle.config.ts"
+    "drizzle:push": "drizzle-kit push --config=drizzle.config.ts"
   },
   "devDependencies": {
     "@types/google.maps": "^3.65.1",

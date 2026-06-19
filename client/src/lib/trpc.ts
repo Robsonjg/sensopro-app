@@ -1,15 +1,13 @@
 import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "../../../server/routers";
 import { httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "../../../server/routers";
 
 export const trpc = createTRPCReact<AppRouter>();
 
 export const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
-      // Adiciona o sufixo /api/trpc no final da URL base
       url: `${import.meta.env.VITE_API_URL ?? ""}/api/trpc`,
-      maxURLLength: 2083, 
     }),
   ],
 });

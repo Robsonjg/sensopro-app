@@ -1,12 +1,14 @@
 import { Route, Switch } from "wouter";
-import HomePage from "./pages/public/HomePage";
-import AdminLoginPage from "./pages/admin/AdminLoginPage";
-import AdminPage from "./pages/admin/AdminPage";
-import NotFound from "./pages/NotFound";
-import AvaliacaoPage from "./pages/public/AvaliacaoPage";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { trpc, trpcClient } from "./lib/trpc";
 
+import HomePage from "./pages/public/HomePage";
+import AdminLoginPage from "./pages/admin/AdminLoginPage";
+import AdminPage from "./pages/admin/AdminPage";
+import AvaliacaoPage from "./pages/public/AvaliacaoPage";
+import NotFound from "./pages/NotFound";
+
+/* 🔥 IMPORTANTE: fora do componente */
 const queryClient = new QueryClient();
 
 function App() {

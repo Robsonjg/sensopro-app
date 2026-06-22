@@ -6,10 +6,12 @@
 
 
   "scripts": {
-
     "dev": "tsx _core/index.ts",
     "build": "tsc",
-    "start": "node dist/server/_core/index.js"
+    "start": "node dist/server/_core/index.js",
+    "drizzle-kit": "drizzle-kit",
+    "db:push": "drizzle-kit push --config=drizzle.config.ts",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts"
   },
   "dependencies": {
     "@types/bcrypt": "6.0.0",
@@ -28,6 +30,7 @@
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.22.4"
   }
 }

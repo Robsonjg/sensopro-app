@@ -1,19 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
+      "version": "7",
       "when": 1779197001560,
-      "tag": "0000_late_tigra",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1779197126253,
-      "tag": "0001_uneven_black_crow",
+      "tag": "0000_initial_schema",
       "breakpoints": true
     }
   ]

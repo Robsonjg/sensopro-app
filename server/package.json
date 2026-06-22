@@ -10,8 +10,8 @@
     "build": "tsc",
     "start": "node dist/server/_core/index.js",
     "drizzle-kit": "drizzle-kit",
-    "db:push": "drizzle-kit push --config=drizzle.config.ts",
-    "db:generate": "drizzle-kit generate --config=drizzle.config.ts"
+    "db:push": "tsx node_modules/drizzle-kit/bin.cjs push --config=drizzle.config.ts",
+    "db:generate": "tsx node_modules/drizzle-kit/bin.cjs generate --config=drizzle.config.ts"
   },
   "dependencies": {
     "@types/bcrypt": "6.0.0",

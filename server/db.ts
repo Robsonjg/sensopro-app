@@ -454,7 +454,7 @@ export async function listSessoesFinalizadas(experimento_id: number): Promise<Se
   return db
     .select()
     .from(sessoes)
-    .where(and(eq(sessoes.experimento_id, experimento_id), eq(sessoes.finalizado, true)));
+    .where(eq(sessoes.experimento_id, experimento_id)); // 👈 Removido o filtro estrito de finalizado para computar todos os testes feitos
 }
 
 export async function acceptConvite(codigo: string, admin_id: number): Promise<void> {

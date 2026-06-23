@@ -86,9 +86,9 @@ async function loginAdminFn({ input, ctx }: { input: any; ctx: any }) {
   
   // CORRIGIDO PARA PRODUÇÃO: SameSite=None e Secure são obrigatórios para Vercel + Railway
   ctx.res.setHeader(
-    "Set-Cookie",
-    `admin_session=${encodeURIComponent(sessionData)}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${60 * 60 * 24 * 7}`
-  );
+  "Set-Cookie",
+  `admin_session=${encodeURIComponent(sessionData)}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${60 * 60 * 24 * 7}`
+);
 
   return { 
     success: true,

@@ -336,7 +336,7 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAtributo(input.id)),
   }),
 
-  /* -------- DASHBOARD (PROTEGIDO CONTRA TELA BRANCA) -------- */
+  /* -------- DASHBOARD CORRIGIDO (PREVINE TELA BRANCA) -------- */
   dashboard: router({
     getData: protectedProcedure
       .input(z.object({ experimento_id: z.number() }))
@@ -344,25 +344,35 @@ export const appRouter = router({
         try {
           const exp = await getExperimentoById(input.experimento_id);
           
-          // Busca os dados consolidados do banco
+          // Busca métricas gerais agregadas
           const dbStats = await getDashboardData(input.experimento_id);
 
-          // Busca as amostras e atributos reais
-          const amostrasLista = await listAmostras(input.experimento_id);
-          const atributosLista = await listAtributos(input.experimento_id);
+          // Busca amostras e atributos cadastrados
+          const amostrasLista = await listAmostras(input.experimento_id) ?? [];
+          const atributosLista = await listAtributos(input.experimento_id) ?? [];
+
+          // ESTRUTURA DE FALLBACK PARA AS MÉDIAS: 
+          // Mapeia uma estrutura inicial zerada para que o componente gráfico (.map) do front não quebre
+          const mediasMock = amostrasLista.map(amostra => ({
+            amostraId: amostra.id,
+            nome: amostra.nome,
+            valores: atributosLista.map(at => ({
+              atributoId: at.id,
+              nome: at.nome,
+              media: 0 // Inicia zerado até haver respostas computadas
+            }))
+          }));
 
           return {
             total: dbStats?.totalSessoes ?? 0,
             sessoesFinalizadas: dbStats?.sessoesConcluidas ?? 0,
-            // Força a garantia de que sempre retornará um Array, evitando quebras de .map()
             amostras: Array.isArray(amostrasLista) ? amostrasLista : [],
             atributos: Array.isArray(atributosLista) ? atributosLista : [],
-            medias: [], // Mantido como array padrão seguro
+            medias: mediasMock, // 👈 Enviando a estrutura correta para os loops do front
             experimento: exp ?? null,
           };
         } catch (error) {
-          console.error("❌ Erro ao carregar dados do Dashboard no tRPC:", error);
-          // Retorno de fallback seguro para o frontend não quebrar de jeito nenhum
+          console.error("❌ Erro catastrófico no Dashboard:", error);
           return {
             total: 0,
             sessoesFinalizadas: 0,

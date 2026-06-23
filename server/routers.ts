@@ -33,6 +33,7 @@ import {
   createConvite,
   getConviteByCode,
   upsertResposta,
+  getDashboardData,
 } from "./db.js";
 
 import {
@@ -42,25 +43,21 @@ import {
 } from "./_core/trpc.js";
 
 /* =========================
-   HELPERS (PADRÃO: admin_id)
+   HELPERS DE AUTENTICAÇÃO
 ========================= */
 
 function getadmin_idFromReq(req: any): number | undefined {
   const cookieHeader = req?.headers?.cookie;
   if (!cookieHeader) return undefined;
 
-  // Divide os cookies tratando espaços extras comuns entre navegadores
   const cookies = cookieHeader.split(";").map((c: string) => c.trim());
 
   for (const cookie of cookies) {
     if (cookie.startsWith("admin_session=")) {
       try {
         const value = cookie.replace("admin_session=", "");
-        // Crucial: Desfaz a codificação de URL que o cookie sofre ao ser gravado
         const decoded = decodeURIComponent(value);
         const parsed = JSON.parse(decoded);
-        
-        // PADRÃO FORÇADO: Busca estritamente pela chave minúscula do banco
         return parsed.admin_id; 
       } catch (err) {
         console.error("❌ Erro ao decodificar cookie de sessão:", err);
@@ -84,11 +81,11 @@ async function loginAdminFn({ input, ctx }: { input: any; ctx: any }) {
 
   const sessionData = JSON.stringify({ admin_id: admin.id });
   
-  // CORRIGIDO PARA PRODUÇÃO: SameSite=None e Secure são obrigatórios para Vercel + Railway
+  // ULTRA-COMPATÍVEL: Configurado para cross-site (Vercel + Railway) usando as travas de 2026 do Chrome
   ctx.res.setHeader(
-  "Set-Cookie",
-  `admin_session=${encodeURIComponent(sessionData)}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${60 * 60 * 24 * 7}`
-);
+    "Set-Cookie",
+    `admin_session=${encodeURIComponent(sessionData)}; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=${60 * 60 * 24 * 7}`
+  );
 
   return { 
     success: true,
@@ -101,10 +98,9 @@ async function loginAdminFn({ input, ctx }: { input: any; ctx: any }) {
 }
 
 async function logoutAdminFn({ ctx }: { ctx: any }) {
-  // CORRIGIDO PARA PRODUÇÃO: Mesmas diretivas no logout para limpar com sucesso
   ctx.res.setHeader(
     "Set-Cookie",
-    "admin_session=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0"
+    "admin_session=; Path=/; HttpOnly; Secure; SameSite=None; Partitioned; Max-Age=0"
   );
   return { success: true };
 }
@@ -124,7 +120,7 @@ async function meAdminFn({ ctx }: { ctx: any }) {
 }
 
 /* =========================
-   ROUTER
+   ROUTER PRINCIPAL (tRPC)
 ========================= */
 
 export const appRouter = router({
@@ -133,7 +129,7 @@ export const appRouter = router({
     return { status: "ok", uptime: process.uptime() };
   }),
 
-  /* -------- AUTH -------- */
+  /* -------- AUTH PADRÃO -------- */
   auth: router({
     login: publicProcedure
       .input(z.object({ email: z.string().email(), senha: z.string() }))
@@ -144,20 +140,10 @@ export const appRouter = router({
     me: publicProcedure.query(meAdminFn),
 
     registro: publicProcedure
-      .input(
-        z.object({
-          email: z.string().email(),
-          senha: z.string(),
-          nome: z.string(),
-        })
-      )
+      .input(z.object({ email: z.string().email(), senha: z.string(), nome: z.string() }))
       .mutation(async ({ input }) => {
         const exists = await getAdminByEmail(input.email);
-
-        if (exists) {
-          throw new TRPCError({ code: "CONFLICT" });
-        }
-
+        if (exists) throw new TRPCError({ code: "CONFLICT" });
         const hash = await bcrypt.hash(input.senha, 10);
 
         return createAdmin({
@@ -169,7 +155,7 @@ export const appRouter = router({
       }),
   }),
 
-  /* -------- ADMIN AUTH & MANAGEMENT -------- */
+  /* -------- ADMIN AUTH & MANAGEMENT (PAINEL DE GERENCIAMENTO) -------- */
   adminAuth: router({
     login: publicProcedure
       .input(z.object({ email: z.string().email(), senha: z.string() }))
@@ -179,32 +165,22 @@ export const appRouter = router({
 
     me: publicProcedure.query(meAdminFn),
 
-    // ADICIONE ESTA ROTA AQUI: Sanando o erro do "trpc.adminAuth.registro"
     registro: publicProcedure
-      .input(
-        z.object({
-          email: z.string().email(),
-          senha: z.string(),
-          nome: z.string(),
-        })
-      )
+      .input(z.object({ email: z.string().email(), senha: z.string(), nome: z.string() }))
       .mutation(async ({ input }) => {
         const exists = await getAdminByEmail(input.email);
-
-        if (exists) {
-          throw new TRPCError({ code: "CONFLICT" });
-        }
-
+        if (exists) throw new TRPCError({ code: "CONFLICT" });
         const hash = await bcrypt.hash(input.senha, 10);
 
         return createAdmin({
           nome: input.nome,
           email: input.email,
           senha_hash: hash,
-          ativo: false, // Criado como falso até aprovação ou link
+          ativo: false, 
         });
       }),
 
+    // UNIFICADO: Agora a rota 'list' responde sob o escopo esperado pelo frontend administrativo
     list: protectedProcedure.query(() => listAdmins()),
 
     promoteByEmail: protectedProcedure
@@ -226,14 +202,7 @@ export const appRouter = router({
       }),
 
     acceptConviteAndRegister: publicProcedure
-      .input(
-        z.object({
-          codigo: z.string(),
-          email: z.string().email(),
-          senha: z.string(),
-          nome: z.string(),
-        })
-      )
+      .input(z.object({ codigo: z.string(), email: z.string().email(), senha: z.string(), nome: z.string() }))
       .mutation(async ({ input }) => {
         const convite = await getConviteByCode(input.codigo);
         if (!convite || convite.usado) {
@@ -263,46 +232,7 @@ export const appRouter = router({
           criado_por: ctx.admin.id, 
         });
 
-        const base =
-          process.env.FRONTEND_URL ||
-          process.env.CLIENT_URL ||
-          "http://localhost:5173";
-
-        return {
-          codigo,
-          link: `${base}/admin/registro?codigo=${codigo}`,
-        };
-      }),
-  }),
-
-  /* -------- ADMINS -------- */
-  admin: router({
-    list: protectedProcedure.query(() => listAdmins()),
-
-    promoteByEmail: protectedProcedure
-      .input(z.object({ email: z.string().email() }))
-      .mutation(({ input }) => promoteAdminByEmail(input.email)),
-
-    deactivateByEmail: protectedProcedure
-      .input(z.object({ email: z.string().email() }))
-      .mutation(({ input }) => deactivateAdminByEmail(input.email)),
-
-    createConvite: protectedProcedure
-      .input(z.object({ email: z.string().email().optional() }))
-      .mutation(async ({ input, ctx }) => {
-        const codigo = nanoid(10);
-
-        await createConvite({
-          email: input.email ?? "",
-          codigo,
-          criado_por: ctx.admin.id,
-        });
-
-        const base =
-          process.env.FRONTEND_URL ||
-          process.env.CLIENT_URL ||
-          "http://localhost:5173";
-
+        const base = process.env.FRONTEND_URL || process.env.CLIENT_URL || "http://localhost:5173";
         return {
           codigo,
           link: `${base}/admin/registro?codigo=${codigo}`,
@@ -357,25 +287,11 @@ export const appRouter = router({
       .query(({ input }) => listAmostras(input.experimento_id)),
 
     create: protectedProcedure
-      .input(
-        z.object({
-          experimento_id: z.number(),
-          nome: z.string(),
-          codigo: z.string(),
-          descricao: z.string().optional(),
-          ordem: z.number(),
-        })
-      )
-      .mutation(({ input }) =>
-        createAmostra({ ...input })
-      ),
+      .input(z.object({ experimento_id: z.number(), nome: z.string(), codigo: z.string(), descricao: z.string().optional(), ordem: z.number() }))
+      .mutation(({ input }) => createAmostra({ ...input })),
 
     reorder: protectedProcedure
-      .input(
-        z.object({
-          items: z.array(z.object({ id: z.number(), ordem: z.number() })),
-        })
-      )
+      .input(z.object({ items: z.array(z.object({ id: z.number(), ordem: z.number() })) }))
       .mutation(async ({ input }) => {
         for (const item of input.items) {
           await updateAmostra(item.id, { ordem: item.ordem });
@@ -399,24 +315,11 @@ export const appRouter = router({
       .query(({ input }) => listAtributos(input.experimento_id)),
 
     create: protectedProcedure
-      .input(
-        z.object({ 
-          experimento_id: z.number(), 
-          nome: z.string(),
-          ordem: z.number(),
-        })
-      )
-      .mutation(({ input }) =>
-        createAtributo({ ...input })
-      ),
+      .input(z.object({ experimento_id: z.number(), nome: z.string(), ordem: z.number() }))
+      .mutation(({ input }) => createAtributo({ ...input })),
 
     reorder: protectedProcedure
-      .input(
-        z.object({
-          // CORRIGIDO: Alterado de a.number() para z.number()
-          items: z.array(z.object({ id: z.number(), ordem: z.number() })),
-        })
-      )
+      .input(z.object({ items: z.array(z.object({ id: z.number(), ordem: z.number() })) }))
       .mutation(async ({ input }) => {
         for (const item of input.items) {
           await updateAtributo(item.id, { ordem: item.ordem });
@@ -433,16 +336,19 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAtributo(input.id)),
   }),
 
-  /* -------- DASHBOARD -------- */
+  /* -------- DASHBOARD (INTEGRADO COM OS DADOS REAIS) -------- */
   dashboard: router({
     getData: protectedProcedure
       .input(z.object({ experimento_id: z.number() }))
       .query(async ({ input }) => {
         const exp = await getExperimentoById(input.experimento_id);
+        
+        // CORRIGIDO: Consumindo as métricas reais que a Bianca e avaliadores gerarem no Supabase
+        const dbStats = await getDashboardData(input.experimento_id);
 
         return {
-          total: 0,
-          sessoesFinalizadas: [],
+          total: dbStats.totalSessoes,
+          sessoesFinalizadas: dbStats.sessoesConcluidas,
           amostras: await listAmostras(input.experimento_id),
           atributos: await listAtributos(input.experimento_id),
           medias: [],
@@ -467,11 +373,9 @@ export const appRouter = router({
       .input(z.object({ slug: z.string() }))
       .query(async ({ input }) => {
         const exp = await getExperimentoBySlug(input.slug);
-
         if (!exp || !exp.ativo) {
           throw new TRPCError({ code: "NOT_FOUND" });
         }
-
         return {
           experimento: exp,
           amostras: await listAmostras(exp.id),
@@ -480,18 +384,9 @@ export const appRouter = router({
       }),
 
     iniciarSessao: publicProcedure
-      .input(
-        z.object({
-          experimento_id: z.number(),
-          idade: z.number(),
-          cidade: z.string(),
-          estado: z.string(),
-          pais: z.string(),
-        })
-      )
+      .input(z.object({ experimento_id: z.number(), idade: z.number(), cidade: z.string(), estado: z.string(), pais: z.string() }))
       .mutation(async ({ input }) => {
         const exp = await getExperimentoById(input.experimento_id);
-
         if (!exp) throw new TRPCError({ code: "NOT_FOUND" });
 
         return createSessao({
@@ -502,26 +397,12 @@ export const appRouter = router({
       }),
 
     salvarResposta: publicProcedure
-      .input(
-        z.object({
-          sessao_id: z.number(),
-          atributo_id: z.number(),
-          amostra_id: z.number(),
-          valor: z.number(),
-        })
-      )
+      .input(z.object({ sessao_id: z.number(), atributo_id: z.number(), amostra_id: z.number(), valor: z.number() }))
       .mutation(({ input }) => upsertResposta(input)),
 
     finalizar: publicProcedure
-      .input(
-        z.object({
-          sessao_id: z.number(),
-          tempo_total: z.number(),
-        })
-      )
-      .mutation(({ input }) =>
-        finalizarSessao(input.sessao_id, input.tempo_total)
-      ),
+      .input(z.object({ sessao_id: z.number(), tempo_total: z.number() }))
+      .mutation(({ input }) => finalizarSessao(input.sessao_id, input.tempo_total)),
   }),
 });
 

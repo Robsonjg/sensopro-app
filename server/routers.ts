@@ -337,7 +337,7 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAtributo(input.id)),
   }),
 
-  /* -------- DASHBOARD ULTRA COMPATÍVEL CORRIGIDO -------- */
+ /* -------- DASHBOARD COM FILTRO POR NOMES (CORREÇÃO DE TYPING) -------- */
   dashboard: router({
     getData: protectedProcedure
       .input(z.object({ experimento_id: z.number() }))
@@ -352,16 +352,41 @@ export const appRouter = router({
           const amostrasLista = await listAmostras(input.experimento_id) ?? [];
           const atributosLista = await listAtributos(input.experimento_id) ?? [];
           const respostasCompletas = await getRespostasCompletas(input.experimento_id) ?? [];
-          
-          // Chamando a função nova e isolada para evitar erros de import de query!
           const sessoesLista = await listSessoesFinalizadas(input.experimento_id);
+
+          const amostras = Array.isArray(amostrasLista) ? amostrasLista : [];
+          const atributos = Array.isArray(atributosLista) ? atributosLista : [];
+          const respostas = Array.isArray(respostasCompletas) ? respostasCompletas : [];
+
+          // CÁLCULO DAS MÉDIAS USANDO OS CAMPOS DE TEXTO RETORNADOS DO BANCO
+          const mediasCalculadas: any[] = [];
+
+          amostras.forEach((am) => {
+            atributos.forEach((at) => {
+              // CORRIGIDO: Filtrando por 'amostraNome' e 'atributoNome' para bater com o tipo retornado
+              const notasFiltradas = respostas.filter(
+                (r: any) => r.amostraNome === am.nome && r.atributoNome === at.nome
+              );
+
+              // Calcula a média das notas inseridas
+              const soma = notasFiltradas.reduce((acc, curr: any) => acc + Number(curr.valor ?? 0), 0);
+              const mediaFinal = notasFiltradas.length > 0 ? soma / notasFiltradas.length : 0;
+
+              // Retorna mapeado com o ID que o front-end espera para renderizar a barra
+              mediasCalculadas.push({
+                amostra_id: am.id,
+                atributo_id: at.id,
+                media: mediaFinal,
+              });
+            });
+          });
 
           return {
             total: dbStats?.totalSessoes ?? 0, 
-            sessoesFinalizadas: sessoesLista,  // Entrega o array perfeito para o front
-            amostras: Array.isArray(amostrasLista) ? amostrasLista : [],
-            atributos: Array.isArray(atributosLista) ? atributosLista : [],
-            medias: Array.isArray(respostasCompletas) ? respostasCompletas : [], 
+            sessoesFinalizadas: sessoesLista,  
+            amostras,
+            atributos,
+            medias: mediasCalculadas,
             experimento: exp ?? null,
           };
         } catch (error) {

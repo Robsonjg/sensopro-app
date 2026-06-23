@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
 interface Props {
-  experimentoId: number | null;
+  experimento_id: number | null;
   onSelectExp: (id: number) => void;
 }
 
@@ -32,18 +32,18 @@ const COLORS = [
   "#1a2b5e", "#4f46e5", "#818cf8", "#a5b4fc", "#c7d2fe",
 ];
 
-export default function DashboardView({ experimentoId, onSelectExp }: Props) {
+export default function DashboardView({ experimento_id, onSelectExp }: Props) {
   const { data: allExps } = trpc.experimentos.listar.useQuery();
-  const [selectedId, setSelectedId] = useState<number | null>(experimentoId);
+  const [selectedId, setSelectedId] = useState<number | null>(experimento_id);
 
-  const activeId = selectedId ?? experimentoId;
+  const activeId = selectedId ?? experimento_id;
 
   const { data, isLoading } = trpc.dashboard.getData.useQuery(
-    { experimentoId: activeId! },
+    { experimento_id: activeId! },
     { enabled: !!activeId }
   );
   const { data: exportData } = trpc.dashboard.exportar.useQuery(
-    { experimentoId: activeId! },
+    { experimento_id: activeId! },
     { enabled: !!activeId }
   );
 
@@ -56,8 +56,8 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
       const entry: Record<string, unknown> = { atributo: attr.nome };
       amostras.forEach((am: any) => {
         const m: any = medias.find((x: any) =>
-  x.atributoId === attr.id &&
-  x.amostraId === am.id
+  x.atributo_id === attr.id &&
+  x.amostra_id === am.id
 );
         entry[am.codigo] = m ? Number(Number(m.media).toFixed(1)) : 0;
       });
@@ -65,7 +65,7 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
     });
 
     const porAmostra = amostras.map((am: any) => {
-      const vals = medias.filter((x: any) => x.amostraId === am.id).map((x: any) => Number(x.media));
+      const vals = medias.filter((x: any) => x.amostra_id === am.id).map((x: any) => Number(x.media));
       const avg = vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0;
       return { amostra: am.codigo, nome: am.nome, media: Number(avg.toFixed(1)) };
     });
@@ -78,16 +78,16 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
     const { amostras, atributos, respostas } = exportData;
 
     const rows = respostas.map((r: any) => {
-      const am = amostras.find((a: any) => a.id === r.amostraId);
-      const at = atributos.find((a: any) => a.id === r.atributoId);
+      const am = amostras.find((a: any) => a.id === r.amostra_id);
+      const at = atributos.find((a: any) => a.id === r.atributo_id);
       return {
-        "Sessão ID": r.sessaoId,
+        "Sessão ID": r.sessao_id,
         Idade: r.idade ?? "",
         Cidade: r.cidade ?? "",
         Estado: r.estado ?? "",
         País: r.pais ?? "",
-        "Data/Hora": r.finalizadoEm ? new Date(r.finalizadoEm).toLocaleString("pt-BR") : "",
-        "Tempo (s)": r.tempoTotal ?? "",
+        "Data/Hora": r.finalizado_em ? new Date(r.finalizado_em).toLocaleString("pt-BR") : "",
+        "Tempo (s)": r.tempo_total ?? "",
         "Amostra (Código)": am?.codigo ?? "",
         "Amostra (Nome)": am?.nome ?? "",
         Atributo: at?.nome ?? "",
@@ -100,8 +100,8 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
       const row: Record<string, unknown> = { Atributo: attr.nome };
       amostras.forEach((am: any) => {
         const m: any = data.medias.find((x: any) =>
-  x.atributoId === attr.id &&
-  x.amostraId === am.id
+  x.atributo_id === attr.id &&
+  x.amostra_id === am.id
 );
         row[am.codigo] = m ? Number(Number(m.media).toFixed(2)) : "-";
       });
@@ -332,8 +332,8 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
                             <td>{s.cidade ?? "—"}</td>
                             <td>{s.estado ?? "—"}</td>
                             <td>{s.pais ?? "—"}</td>
-                            <td>{s.tempoTotal ?? "—"}</td>
-                            <td>{s.finalizadoEm ? new Date(s.finalizadoEm).toLocaleString("pt-BR") : "—"}</td>
+                            <td>{s.tempo_total ?? "—"}</td>
+                            <td>{s.finalizado_em ? new Date(s.finalizado_em).toLocaleString("pt-BR") : "—"}</td>
                           </tr>
                         ))
                       )}

@@ -18,9 +18,9 @@ interface Sessao {
   estado: string | null;
   pais: string | null;
   observacoes: string | null;
-  experimentoId: number;
+  experimento_id: number;
   finalizado: boolean;
-  tempoTotal: number | null;
+  tempo_total: number | null;
 }
 
 type Respostas = Record<number, Record<number, number>>;
@@ -51,11 +51,11 @@ export default function AvaliacaoPage() {
   const [idadeError, setIdadeError] = useState("");
   const [sessao, setSessao] = useState<Sessao | null>(null);
   const [respostas, setRespostas] = useState<Respostas>({});
-  const [amostraIdx, setAmostraIdx] = useState(0);
-  const [atributoIdx, setAtributoIdx] = useState(0);
+  const [amostra_idx, setamostra_idx] = useState(0);
+  const [atributo_idx, setatributo_idx] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [tempoInicio, setTempoInicio] = useState<number | null>(null);
-  const [tempoTotal, setTempoTotal] = useState(0);
+  const [tempo_total, settempo_total] = useState(0);
   const [showObservacoes, setShowObservacoes] = useState(false);
 
   const sliderRef = useRef<HTMLInputElement>(null);
@@ -69,7 +69,7 @@ export default function AvaliacaoPage() {
   useEffect(() => {
     if (phase === "obrigado" && tempoInicio) {
       const tempo = Math.round((Date.now() - tempoInicio) / 1000);
-      setTempoTotal(tempo);
+      settempo_total(tempo);
     }
   }, [phase, tempoInicio]);
 
@@ -84,20 +84,20 @@ export default function AvaliacaoPage() {
   const atributos = data?.atributos ?? [];
 
   const totalSteps = amostras.length * atributos.length;
-  const currentStep = amostraIdx * atributos.length + atributoIdx;
+  const currentStep = amostra_idx * atributos.length + atributo_idx;
   const progress = totalSteps > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
 
-  const currentAmostra = amostras[amostraIdx];
-  const currentAtributo = atributos[atributoIdx];
+  const currentAmostra = amostras[amostra_idx];
+  const currentAtributo = atributos[atributo_idx];
 
-  function getValor(amostraId: number, atributoId: number): number {
-    return respostas[amostraId]?.[atributoId] ?? 0;
+  function getValor(amostra_id: number, atributo_id: number): number {
+    return respostas[amostra_id]?.[atributo_id] ?? 0;
   }
 
-  function setValor(amostraId: number, atributoId: number, valor: number) {
+  function setValor(amostra_id: number, atributo_id: number, valor: number) {
     setRespostas((prev) => ({
       ...prev,
-      [amostraId]: { ...(prev[amostraId] ?? {}), [atributoId]: valor },
+      [amostra_id]: { ...(prev[amostra_id] ?? {}), [atributo_id]: valor },
     }));
   }
 
@@ -153,24 +153,24 @@ export default function AvaliacaoPage() {
   async function handleIniciar() {
     setSubmitting(true);
     try {
-      const sessaoId = await iniciarMut.mutateAsync({
+      const sessao_id = await iniciarMut.mutateAsync({
         idade: parseInt(idade),
         cidade: cidade.trim(),
         estado: estado.trim(),
         pais: pais.trim(),
-        experimentoId: experimento!.id,
+        experimento_id: experimento!.id,
       });
       setSessao({ 
-        id: sessaoId,
+        id: sessao_id,
         nome: nome.trim(),
         idade: parseInt(idade),
         cidade: cidade.trim(),
         estado: estado.trim(),
         pais: pais.trim(),
         observacoes: null,
-        experimentoId: experimento!.id,
+        experimento_id: experimento!.id,
         finalizado: false,
-        tempoTotal: null
+        tempo_total: null
       });
       setPhase("avaliacao");
     } catch (e: any) {
@@ -187,9 +187,9 @@ export default function AvaliacaoPage() {
     setSubmitting(true);
     try {
       await salvarMut.mutateAsync({
-        sessaoId: sessao.id,
-        atributoId: currentAtributo.id,
-        amostraId: currentAmostra.id,
+        sessao_id: sessao.id,
+        atributo_id: currentAtributo.id,
+        amostra_id: currentAmostra.id,
         valor,
       });
     } catch (e: any) {
@@ -205,8 +205,8 @@ export default function AvaliacaoPage() {
     setSubmitting(true);
     try {
       const tempo = tempoInicio ? Math.round((Date.now() - tempoInicio) / 1000) : 0;
-      await finalizarMut.mutateAsync({ sessaoId: sessao!.id, tempoTotal: tempo });
-      setTempoTotal(tempo);
+      await finalizarMut.mutateAsync({ sessao_id: sessao!.id, tempo_total: tempo });
+      settempo_total(tempo);
       setPhase("obrigado");
     } catch (e: any) {
       toast.error("Erro ao finalizar. Tente novamente.");
@@ -222,9 +222,9 @@ export default function AvaliacaoPage() {
     setSubmitting(true);
     try {
       await salvarMut.mutateAsync({
-        sessaoId: sessao.id,
-        atributoId: currentAtributo.id,
-        amostraId: currentAmostra.id,
+        sessao_id: sessao.id,
+        atributo_id: currentAtributo.id,
+        amostra_id: currentAmostra.id,
         valor,
       });
     } catch (e: any) {
@@ -234,11 +234,11 @@ export default function AvaliacaoPage() {
     }
     setSubmitting(false);
 
-    if (atributoIdx < atributos.length - 1) {
-      setAtributoIdx((i) => i + 1);
-    } else if (amostraIdx < amostras.length - 1) {
-      setAmostraIdx((i) => i + 1);
-      setAtributoIdx(0);
+    if (atributo_idx < atributos.length - 1) {
+      setatributo_idx((i) => i + 1);
+    } else if (amostra_idx < amostras.length - 1) {
+      setamostra_idx((i) => i + 1);
+      setatributo_idx(0);
     } else {
       // Última resposta - mostrar campo de observações
       setShowObservacoes(true);
@@ -246,16 +246,16 @@ export default function AvaliacaoPage() {
   }
 
   function handleAnterior() {
-    if (atributoIdx > 0) {
-      setAtributoIdx((i) => i - 1);
-    } else if (amostraIdx > 0) {
-      setAmostraIdx((i) => i - 1);
-      setAtributoIdx(atributos.length - 1);
+    if (atributo_idx > 0) {
+      setatributo_idx((i) => i - 1);
+    } else if (amostra_idx > 0) {
+      setamostra_idx((i) => i - 1);
+      setatributo_idx(atributos.length - 1);
     }
   }
 
-  const isFirst = amostraIdx === 0 && atributoIdx === 0;
-  const isLast = amostraIdx === amostras.length - 1 && atributoIdx === atributos.length - 1;
+  const isFirst = amostra_idx === 0 && atributo_idx === 0;
+  const isLast = amostra_idx === amostras.length - 1 && atributo_idx === atributos.length - 1;
 
   if (isLoading) {
     return (
@@ -464,10 +464,10 @@ export default function AvaliacaoPage() {
 
           {/* ── Tela de avaliação ── */}
           {phase === "avaliacao" && !showObservacoes && currentAmostra && currentAtributo && (
-            <div className="animate-fade-in" key={`${amostraIdx}-${atributoIdx}`}>
+            <div className="animate-fade-in" key={`${amostra_idx}-${atributo_idx}`}>
               <div className="flex items-center justify-between mb-4 px-1">
                 <span className="text-xs text-muted-foreground">
-                  Amostra {amostraIdx + 1} de {amostras.length}
+                  Amostra {amostra_idx + 1} de {amostras.length}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {currentStep + 1} / {totalSteps}
@@ -590,7 +590,7 @@ export default function AvaliacaoPage() {
                     <span className="text-sm">Tempo total de avaliação</span>
                   </div>
                   <div className="text-3xl font-bold text-primary tabular-nums">
-                    {formatarTempo(tempoTotal)}
+                    {formatarTempo(tempo_total)}
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Você pode fechar esta janela com segurança.

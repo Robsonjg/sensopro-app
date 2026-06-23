@@ -2,7 +2,7 @@ CREATE TABLE `convites` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`codigo` varchar(32) NOT NULL,
 	`email` varchar(320),
-	`criadoPor` int NOT NULL,
+	`criado_por` int NOT NULL,
 	`usado` boolean NOT NULL DEFAULT false,
 	`usadoPor` int,
 	`usadoEm` timestamp,

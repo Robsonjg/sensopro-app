@@ -80,14 +80,12 @@ app.use('/api/trpc', createExpressMiddleware({
 }));
 
 // Frontend fica no Vercel. Render roda somente API.
-// Em production, não servir/servir fallback do client.
 if (isProduction) {
   // noop
 } else {
   httpServer = app.listen(PORT);
   logServerReady();
 }
-
 
 app.use((_req, res) => {
   res.status(404).json({ error: 'Endpoint nao encontrado' });

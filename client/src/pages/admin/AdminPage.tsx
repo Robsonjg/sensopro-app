@@ -199,13 +199,13 @@ export default function AdminPage() {
           )}
           {section === "experimentos" && selectedExpId && (
             <ExperimentoDetail
-              experimentoId={selectedExpId}
+              experimento_id={selectedExpId}
               onBack={() => setSelectedExpId(null)}
             />
           )}
           {section === "dashboard" && (
             <DashboardView
-              experimentoId={selectedExpId}
+              experimento_id={selectedExpId}
               onSelectExp={(id) => setSelectedExpId(id)}
             />
           )}

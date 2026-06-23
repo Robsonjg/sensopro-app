@@ -31,23 +31,23 @@ async function seedCarnes() {
   try {
     // Verificar se já existe admin
     let admins = await sql`SELECT id FROM admins LIMIT 1`;
-    let adminId;
+    let admin_id;
     
     if (admins.length === 0) {
       console.log("📝 Criando admin padrão...");
       const hash = await bcrypt.hash('admin123', 10);
       const newAdmin = await sql`
-        INSERT INTO admins (email, "senhaHash", nome, ativo)
+        INSERT INTO admins (email, "senha_hash", nome, ativo)
         VALUES ('admin@exemplo.com', ${hash}, 'Administrador', true)
         RETURNING id
       `;
-      adminId = newAdmin[0].id;
-      console.log(`✅ Admin criado com ID: ${adminId}`);
+      admin_id = newAdmin[0].id;
+      console.log(`✅ Admin criado com ID: ${admin_id}`);
       console.log(`   Email: admin@exemplo.com`);
       console.log(`   Senha: admin123`);
     } else {
-      adminId = admins[0].id;
-      console.log(`✅ Admin existente com ID: ${adminId}`);
+      admin_id = admins[0].id;
+      console.log(`✅ Admin existente com ID: ${admin_id}`);
     }
 
     // Desativar experimentos anteriores
@@ -73,17 +73,17 @@ async function seedCarnes() {
       await sql`DELETE FROM experimentos WHERE id = ${expId}`;
     }
 
-    // Criar experimento - USANDO O NOME CORRETO DA COLUNA (adminId)
+    // Criar experimento - USANDO O NOME CORRETO DA COLUNA (admin_id)
     console.log("\n📝 Criando experimento...");
     const newExp = await sql`
-      INSERT INTO experimentos ("adminId", titulo, descricao, slug, ativo, "criadoPor", criadoEm)
+      INSERT INTO experimentos ("admin_id", titulo, descricao, slug, ativo, "criado_por", criado_em)
       VALUES (
-        ${adminId},
+        ${admin_id},
         'Análise Sensorial de Carnes',
         'Avaliação sensorial de diferentes tipos de carnes. Sinta o aroma, prove e avalie cada amostra.',
         'analise-sensorial-de-carnes',
         true,
-        ${adminId},
+        ${admin_id},
         NOW()
       )
       RETURNING id
@@ -91,7 +91,7 @@ async function seedCarnes() {
     expId = newExp[0].id;
     console.log(`✓ Experimento criado: ID ${expId}`);
 
-    // Criar amostras - USANDO O NOME CORRETO DA COLUNA (experimentoId)
+    // Criar amostras - USANDO O NOME CORRETO DA COLUNA (experimento_id)
     console.log("\n🍖 Criando amostras...");
     const amostras = [
       { codigo: "CAR001", nome: "Carne Bovina - Alcatra", descricao: "Corte premium de carne bovina", ordem: 0 },
@@ -102,30 +102,30 @@ async function seedCarnes() {
 
     for (const amostra of amostras) {
       await sql`
-        INSERT INTO amostras ("experimentoId", codigo, nome, descricao, ordem, "criadoEm")
+        INSERT INTO amostras ("experimento_id", codigo, nome, descricao, ordem, "criado_em")
         VALUES (${expId}, ${amostra.codigo}, ${amostra.nome}, ${amostra.descricao}, ${amostra.ordem}, NOW())
       `;
       console.log(`   ✓ ${amostra.nome} (${amostra.codigo})`);
     }
     console.log(`✓ Total: ${amostras.length} amostras criadas`);
 
-    // Criar atributos - USANDO O NOME CORRETO DA COLUNA (experimentoId)
+    // Criar atributos - USANDO O NOME CORRETO DA COLUNA (experimento_id)
     console.log("\n📊 Criando atributos...");
     const atributos = [
-      { nome: "Aroma", descricao: "Intensidade e qualidade do aroma", labelMin: "Fraco", labelMax: "Intenso", ordem: 0 },
-      { nome: "Cor", descricao: "Aparência visual da carne", labelMin: "Pálida", labelMax: "Vibrante", ordem: 1 },
-      { nome: "Textura", descricao: "Maciez e fibra da carne", labelMin: "Dura", labelMax: "Macia", ordem: 2 },
-      { nome: "Suculência", descricao: "Umidade e suculência", labelMin: "Seca", labelMax: "Suculenta", ordem: 3 },
-      { nome: "Sabor", descricao: "Intensidade e qualidade do sabor", labelMin: "Suave", labelMax: "Intenso", ordem: 4 },
-      { nome: "Maciez", descricao: "Facilidade de mastigação", labelMin: "Difícil", labelMax: "Fácil", ordem: 5 },
+      { nome: "Aroma", descricao: "Intensidade e qualidade do aroma", label_min: "Fraco", label_max: "Intenso", ordem: 0 },
+      { nome: "Cor", descricao: "Aparência visual da carne", label_min: "Pálida", label_max: "Vibrante", ordem: 1 },
+      { nome: "Textura", descricao: "Maciez e fibra da carne", label_min: "Dura", label_max: "Macia", ordem: 2 },
+      { nome: "Suculência", descricao: "Umidade e suculência", label_min: "Seca", label_max: "Suculenta", ordem: 3 },
+      { nome: "Sabor", descricao: "Intensidade e qualidade do sabor", label_min: "Suave", label_max: "Intenso", ordem: 4 },
+      { nome: "Maciez", descricao: "Facilidade de mastigação", label_min: "Difícil", label_max: "Fácil", ordem: 5 },
     ];
 
     for (const atributo of atributos) {
       await sql`
-        INSERT INTO atributos ("experimentoId", nome, descricao, "labelMin", "labelMax", ordem, "criadoEm")
-        VALUES (${expId}, ${atributo.nome}, ${atributo.descricao}, ${atributo.labelMin}, ${atributo.labelMax}, ${atributo.ordem}, NOW())
+        INSERT INTO atributos ("experimento_id", nome, descricao, "label_min", "label_max", ordem, "criado_em")
+        VALUES (${expId}, ${atributo.nome}, ${atributo.descricao}, ${atributo.label_min}, ${atributo.label_max}, ${atributo.ordem}, NOW())
       `;
-      console.log(`   ✓ ${atributo.nome} (${atributo.labelMin} → ${atributo.labelMax})`);
+      console.log(`   ✓ ${atributo.nome} (${atributo.label_min} → ${atributo.label_max})`);
     }
     console.log(`✓ Total: ${atributos.length} atributos criados`);
 
@@ -138,8 +138,8 @@ async function seedCarnes() {
     console.log("🔗 Link de avaliação: http://localhost:3000/avaliacao/analise-sensorial-de-carnes");
     
     // Mostrar resumo
-    const amostrasCount = await sql`SELECT COUNT(*) FROM amostras WHERE "experimentoId" = ${expId}`;
-    const atributosCount = await sql`SELECT COUNT(*) FROM atributos WHERE "experimentoId" = ${expId}`;
+    const amostrasCount = await sql`SELECT COUNT(*) FROM amostras WHERE "experimento_id" = ${expId}`;
+    const atributosCount = await sql`SELECT COUNT(*) FROM atributos WHERE "experimento_id" = ${expId}`;
     console.log(`\n📊 Resumo do experimento:`);
     console.log(`   - ${amostrasCount[0].count} amostras`);
     console.log(`   - ${atributosCount[0].count} atributos`);

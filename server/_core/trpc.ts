@@ -3,9 +3,6 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import type { TrpcContext, AdminContext } from "./context";
 import { getAdminById } from "../db.js";
 
-
-
-
 // Removemos o bloco do transformer: superjson daqui
 const t = initTRPC.context<TrpcContext>().create();
 
@@ -24,14 +21,18 @@ export const emailPasswordAdminProcedure = t.procedure.use(
       console.log("📝 Cookie header recebido:", cookieHeader ? "Sim" : "Não");
       
       if (cookieHeader) {
-        // Decodificar o cookie corretamente
-        const cookies = cookieHeader.split("; ");
+        // CORRIGIDO: Split mais flexível tratando espaços extras comuns entre navegadores
+        const cookies = cookieHeader.split(";").map((c: string) => c.trim());
+        
         for (const cookie of cookies) {
           if (cookie.startsWith("admin_session=")) {
             const cookieValue = cookie.substring("admin_session=".length);
             const decodedValue = decodeURIComponent(cookieValue);
             const sessionData = JSON.parse(decodedValue);
-            adminId = sessionData.adminId;
+            
+            // CORRIGIDO: Alterado de sessionData.adminId para sessionData.admin_id
+            adminId = sessionData.admin_id;
+            
             console.log("✅ Admin ID encontrado no cookie:", adminId);
             break;
           }
@@ -42,7 +43,8 @@ export const emailPasswordAdminProcedure = t.procedure.use(
     }
     
     if (!adminId) {
-      console.log("❌ Não autenticado - adminId não encontrado");
+      // CORRIGIDO: Log ajustado para o novo padrão visual
+      console.log("❌ Não autenticado - admin_id não encontrado");
       throw new TRPCError({ code: "FORBIDDEN", message: "Não autenticado" });
     }
     
@@ -69,7 +71,7 @@ export const emailPasswordAdminProcedure = t.procedure.use(
     return next({
       ctx: {
         ...ctx,
-        adminId: admin.id,
+        admin_id: admin.id, // Injetado no padrão snake_case para as rotas
         admin: admin
       }
     });

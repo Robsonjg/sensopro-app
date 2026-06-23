@@ -205,7 +205,7 @@ export default function AdminManagement() {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(admin.criadoEm).toLocaleDateString("pt-BR")}
+                        {new Date(admin.criado_em).toLocaleDateString("pt-BR")}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">

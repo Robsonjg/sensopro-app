@@ -30,7 +30,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 interface Props {
-  experimentoId: number;
+  experimento_id: number;
   onBack: () => void;
 }
 
@@ -38,21 +38,21 @@ type ItemForm = {
   nome: string;
   codigo?: string;
   descricao?: string;
-  labelMin?: string;
-  labelMax?: string;
+  label_min?: string;
+  label_max?: string;
 };
 
-export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
+export default function ExperimentoDetail({ experimento_id, onBack }: Props) {
   const utils = trpc.useUtils();
 
   const { data: exp, isLoading: expLoading } = trpc.experimentos.getById.useQuery({
-    id: experimentoId,
+    id: experimento_id,
   });
   const { data: amostrasRaw, isLoading: amostrasLoading } = trpc.amostras.listar.useQuery({
-    experimentoId,
+    experimento_id,
   });
   const { data: atributosRaw, isLoading: atributosLoading } = trpc.atributos.listar.useQuery({
-    experimentoId,
+    experimento_id,
   });
   const amostras = amostrasRaw ?? [];
   const atributos = atributosRaw ?? [];
@@ -60,7 +60,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   // Mutations experimento
   const updateExpMut = trpc.experimentos.update.useMutation({
     onSuccess: () => {
-      utils.experimentos.getById.invalidate({ id: experimentoId });
+      utils.experimentos.getById.invalidate({ id: experimento_id });
       utils.experimentos.listar.invalidate();
       setEditExpOpen(false);
       toast.success("Experimento atualizado!");
@@ -69,14 +69,14 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const ativarMut = trpc.experimentos.ativar.useMutation({
     onSuccess: () => {
-      utils.experimentos.getById.invalidate({ id: experimentoId });
+      utils.experimentos.getById.invalidate({ id: experimento_id });
       utils.experimentos.listar.invalidate();
       toast.success("Experimento ativado!");
     },
   });
   const desativarMut = trpc.experimentos.desativar.useMutation({
     onSuccess: () => {
-      utils.experimentos.getById.invalidate({ id: experimentoId });
+      utils.experimentos.getById.invalidate({ id: experimento_id });
       utils.experimentos.listar.invalidate();
       toast.success("Experimento desativado.");
     },
@@ -85,7 +85,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   // Mutations amostras
   const createAmostraMut = trpc.amostras.create.useMutation({
     onSuccess: () => {
-      utils.amostras.listar.invalidate({ experimentoId });
+      utils.amostras.listar.invalidate({ experimento_id });
       setAmostraModal({ open: false, editing: null });
       toast.success("Amostra adicionada!");
     },
@@ -93,7 +93,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const updateAmostraMut = trpc.amostras.update.useMutation({
     onSuccess: () => {
-      utils.amostras.listar.invalidate({ experimentoId });
+      utils.amostras.listar.invalidate({ experimento_id });
       setAmostraModal({ open: false, editing: null });
       toast.success("Amostra atualizada!");
     },
@@ -101,7 +101,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const deleteAmostraMut = trpc.amostras.delete.useMutation({
     onSuccess: () => {
-      utils.amostras.listar.invalidate({ experimentoId });
+      utils.amostras.listar.invalidate({ experimento_id });
       toast.success("Amostra removida.");
     },
     onError: (e) => toast.error(e.message),
@@ -110,7 +110,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   // Mutations atributos
   const createAtributoMut = trpc.atributos.create.useMutation({
     onSuccess: () => {
-      utils.atributos.listar.invalidate({ experimentoId });
+      utils.atributos.listar.invalidate({ experimento_id });
       setAtributoModal({ open: false, editing: null });
       toast.success("Atributo adicionado!");
     },
@@ -118,7 +118,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const updateAtributoMut = trpc.atributos.update.useMutation({
     onSuccess: () => {
-      utils.atributos.listar.invalidate({ experimentoId });
+      utils.atributos.listar.invalidate({ experimento_id });
       setAtributoModal({ open: false, editing: null });
       toast.success("Atributo atualizado!");
     },
@@ -126,18 +126,19 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   });
   const deleteAtributoMut = trpc.atributos.delete.useMutation({
     onSuccess: () => {
-      utils.atributos.listar.invalidate({ experimentoId });
+      utils.atributos.listar.invalidate({ experimento_id });
       toast.success("Atributo removido.");
     },
     onError: (e) => toast.error(e.message),
   });
   const reorderAmostrasMut = trpc.amostras.reorder.useMutation({
-    onSuccess: () => utils.amostras.listar.invalidate({ experimentoId }),
-    onError: (e) => toast.error(e.message),
+    onSuccess: () => utils.amostras.listar.invalidate({ experimento_id }),
+    onError: (e: { message: string }) => toast.error(e.message),
   });
+
   const reorderAtributosMut = trpc.atributos.reorder.useMutation({
-    onSuccess: () => utils.atributos.listar.invalidate({ experimentoId }),
-    onError: (e) => toast.error(e.message),
+    onSuccess: () => utils.atributos.listar.invalidate({ experimento_id }),
+    onError: (e: { message: string }) => toast.error(e.message),
   });
 
   type AmostraItem = NonNullable<typeof amostrasRaw>[number];
@@ -161,8 +162,8 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
   const [atributoForm, setAtributoForm] = useState<ItemForm>({
     nome: "",
     descricao: "",
-    labelMin: "Muito Baixo",
-    labelMax: "Muito Alto",
+    label_min: "Muito Baixo",
+    label_max: "Muito Alto",
   });
   const [copied, setCopied] = useState(false);
 
@@ -190,12 +191,12 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
       setAtributoForm({
         nome: item.nome,
         descricao: item.descricao ?? "",
-        labelMin: item.labelMin ?? "Muito Baixo",
-        labelMax: item.labelMax ?? "Muito Alto",
+        label_min: item.label_min ?? "Muito Baixo",
+        label_max: item.label_max ?? "Muito Alto",
       });
       setAtributoModal({ open: true, editing: item });
     } else {
-      setAtributoForm({ nome: "", descricao: "", labelMin: "Muito Baixo", labelMax: "Muito Alto" });
+      setAtributoForm({ nome: "", descricao: "", label_min: "Muito Baixo", label_max: "Muito Alto" });
       setAtributoModal({ open: true, editing: null });
     }
   }
@@ -205,7 +206,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
     if (amostraModal.editing) {
       updateAmostraMut.mutate({ id: amostraModal.editing.id, ...amostraForm });
     } else {
-      createAmostraMut.mutate({ experimentoId, ...amostraForm, codigo: amostraForm.codigo || "", ordem });
+      createAmostraMut.mutate({ experimento_id, ...amostraForm, codigo: amostraForm.codigo || "", ordem });
     }
   }
 
@@ -214,7 +215,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
     if (atributoModal.editing) {
       updateAtributoMut.mutate({ id: atributoModal.editing.id, ...atributoForm });
     } else {
-      createAtributoMut.mutate({ experimentoId, ...atributoForm, ordem });
+      createAtributoMut.mutate({ experimento_id, ...atributoForm, ordem });
     }
   }
 
@@ -297,8 +298,8 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
             }`}
             onClick={() =>
               exp?.ativo
-                ? desativarMut.mutate({ id: experimentoId })
-                : ativarMut.mutate({ id: experimentoId })
+                ? desativarMut.mutate({ id: experimento_id })
+                : ativarMut.mutate({ id: experimento_id })
             }
           >
             {exp?.ativo ? <PowerOff className="w-3 h-3" /> : <Power className="w-3 h-3" />}
@@ -480,9 +481,9 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
                   <div className="flex-1 min-w-0">
                     <span className="text-sm font-medium text-foreground">{item.nome}</span>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-muted-foreground">{item.labelMin}</span>
+                      <span className="text-xs text-muted-foreground">{item.label_min}</span>
                       <span className="text-xs text-muted-foreground">→</span>
-                      <span className="text-xs text-muted-foreground">{item.labelMax}</span>
+                      <span className="text-xs text-muted-foreground">{item.label_max}</span>
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -542,7 +543,7 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
               Cancelar
             </Button>
             <Button
-              onClick={() => updateExpMut.mutate({ id: experimentoId, ...editExpForm })}
+              onClick={() => updateExpMut.mutate({ id: experimento_id, ...editExpForm })}
               disabled={!editExpForm.titulo.trim() || updateExpMut.isPending}
               className="rounded-full"
             >
@@ -655,8 +656,8 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
                 <label className="text-sm font-medium">Rótulo mínimo</label>
                 <Input
                   placeholder="Muito Baixo"
-                  value={atributoForm.labelMin}
-                  onChange={(e) => setAtributoForm((f) => ({ ...f, labelMin: e.target.value }))}
+                  value={atributoForm.label_min}
+                  onChange={(e) => setAtributoForm((f) => ({ ...f, label_min: e.target.value }))}
                   className="rounded-xl"
                 />
               </div>
@@ -664,8 +665,8 @@ export default function ExperimentoDetail({ experimentoId, onBack }: Props) {
                 <label className="text-sm font-medium">Rótulo máximo</label>
                 <Input
                   placeholder="Muito Alto"
-                  value={atributoForm.labelMax}
-                  onChange={(e) => setAtributoForm((f) => ({ ...f, labelMax: e.target.value }))}
+                  value={atributoForm.label_max}
+                  onChange={(e) => setAtributoForm((f) => ({ ...f, label_max: e.target.value }))}
                   className="rounded-xl"
                 />
               </div>

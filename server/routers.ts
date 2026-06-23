@@ -42,76 +42,77 @@ import {
 } from "./_core/trpc.js";
 
 /* =========================
-   HELPERS
+   HELPERS (PADRÃO: admin_id)
 ========================= */
 
-function getAdminIdFromReq(req: any): number | undefined {
+function getadmin_idFromReq(req: any): number | undefined {
   const cookieHeader = req?.headers?.cookie;
-  if (!cookieHeader) return;
+  if (!cookieHeader) return undefined;
 
-  const cookies = cookieHeader.split("; ");
+  // Divide os cookies tratando espaços extras comuns entre navegadores
+  const cookies = cookieHeader.split(";").map((c: string) => c.trim());
 
   for (const cookie of cookies) {
     if (cookie.startsWith("admin_session=")) {
       try {
         const value = cookie.replace("admin_session=", "");
-        const parsed = JSON.parse(decodeURIComponent(value));
-        return parsed.adminId;
-      } catch {
-        return;
+        // Crucial: Desfaz a codificação de URL que o cookie sofre ao ser gravado
+        const decoded = decodeURIComponent(value);
+        const parsed = JSON.parse(decoded);
+        
+        // PADRÃO FORÇADO: Busca estritamente pela chave minúscula do banco
+        return parsed.admin_id; 
+      } catch (err) {
+        console.error("❌ Erro ao decodificar cookie de sessão:", err);
+        return undefined;
       }
     }
   }
+  return undefined;
 }
 
-/* =========================
-   AUTH CORE
-========================= */
-
-const loginAdmin = async ({ input, ctx }: any) => {
+async function loginAdminFn({ input, ctx }: { input: any; ctx: any }) {
   const admin = await getAdminByEmail(input.email);
-
-  if (!admin || !admin.senhaHash) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+  if (!admin || !admin.ativo || !admin.senha_hash) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Credenciais inválidas" });
   }
 
-  const valid = await bcrypt.compare(input.senha, admin.senhaHash);
-
-  if (!valid) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+  // CORRIGIDO: Alterado de admin.senha para admin.senha_hash
+  const senhaValida = await bcrypt.compare(input.senha, admin.senha_hash);
+  if (!senhaValida) {
+    throw new TRPCError({ code: "UNAUTHORIZED", message: "Credenciais inválidas" });
   }
 
-  const session = JSON.stringify({ adminId: admin.id });
-
+  // GRAVAÇÃO DO COOKIE: Salvando estritamente em minúsculo 'admin_id'
+  const sessionData = JSON.stringify({ admin_id: admin.id });
   ctx.res.setHeader(
     "Set-Cookie",
-    `admin_session=${encodeURIComponent(session)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=31536000`
+    `admin_session=${encodeURIComponent(sessionData)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`
   );
 
-  return {
+  return { 
     success: true,
     admin: {
       id: admin.id,
       email: admin.email,
       nome: admin.nome,
-    },
+    }
   };
-};
+}
 
-const logoutAdmin = async ({ ctx }: any) => {
+async function logoutAdminFn({ ctx }: { ctx: any }) {
   ctx.res.setHeader(
     "Set-Cookie",
     "admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
   );
-
   return { success: true };
-};
+}
 
-const meAdmin = async ({ ctx }: any) => {
-  const adminId = getAdminIdFromReq(ctx.req);
-  if (!adminId) return null;
+async function meAdminFn({ ctx }: { ctx: any }) {
+  const admin_id = getadmin_idFromReq(ctx.req);
+  if (!admin_id) return null;
 
-  const admin = await getAdminById(adminId);
+  const admin = await getAdminById(admin_id);
   if (!admin) return null;
 
   return {
@@ -119,7 +120,7 @@ const meAdmin = async ({ ctx }: any) => {
     email: admin.email,
     nome: admin.nome,
   };
-};
+}
 
 /* =========================
    ROUTER
@@ -131,15 +132,15 @@ export const appRouter = router({
     return { status: "ok", uptime: process.uptime() };
   }),
 
-/* -------- AUTH -------- */
+  /* -------- AUTH -------- */
   auth: router({
     login: publicProcedure
       .input(z.object({ email: z.string().email(), senha: z.string() }))
-      .mutation(loginAdmin),
+      .mutation(loginAdminFn),
 
-    logout: publicProcedure.mutation(logoutAdmin),
+    logout: publicProcedure.mutation(logoutAdminFn),
 
-    me: publicProcedure.query(meAdmin),
+    me: publicProcedure.query(meAdminFn),
 
     registro: publicProcedure
       .input(
@@ -161,31 +162,65 @@ export const appRouter = router({
         return createAdmin({
           nome: input.nome,
           email: input.email,
-          senhaHash: hash,
-          ativo: false,
+          senha_hash: hash,
+          ativo: true,
         });
       }),
   }),
 
-/* -------- ADMIN AUTH -------- */
+  /* -------- ADMIN AUTH & MANAGEMENT -------- */
   adminAuth: router({
     login: publicProcedure
       .input(z.object({ email: z.string().email(), senha: z.string() }))
-      .mutation(loginAdmin),
+      .mutation(loginAdminFn),
 
-    logout: publicProcedure.mutation(logoutAdmin),
+    logout: publicProcedure.mutation(logoutAdminFn),
 
-    me: publicProcedure.query(meAdmin),
+    me: publicProcedure.query(meAdminFn),
+
+    // ADICIONE ESTA ROTA AQUI: Sanando o erro do "trpc.adminAuth.registro"
+    registro: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          senha: z.string(),
+          nome: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const exists = await getAdminByEmail(input.email);
+
+        if (exists) {
+          throw new TRPCError({ code: "CONFLICT" });
+        }
+
+        const hash = await bcrypt.hash(input.senha, 10);
+
+        return createAdmin({
+          nome: input.nome,
+          email: input.email,
+          senha_hash: hash,
+          ativo: false, // Criado como falso até aprovação ou link
+        });
+      }),
+
+    list: protectedProcedure.query(() => listAdmins()),
+
+    promoteByEmail: protectedProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(({ input }) => promoteAdminByEmail(input.email)),
+
+    deactivateByEmail: protectedProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(({ input }) => deactivateAdminByEmail(input.email)),
 
     validateConvite: publicProcedure
       .input(z.object({ codigo: z.string() }))
       .query(async ({ input }) => {
         const convite = await getConviteByCode(input.codigo);
-
         if (!convite || convite.usado) {
           throw new TRPCError({ code: "NOT_FOUND" });
         }
-
         return { email: convite.email };
       }),
 
@@ -200,27 +235,46 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         const convite = await getConviteByCode(input.codigo);
-
         if (!convite || convite.usado) {
           throw new TRPCError({ code: "NOT_FOUND" });
         }
 
         const hash = await bcrypt.hash(input.senha, 10);
-
         const admin = await createAdmin({
           nome: input.nome,
           email: input.email,
-          senhaHash: hash,
+          senha_hash: hash,
           ativo: true,
         });
 
         await acceptConvite(input.codigo, admin.id);
-
         return { success: true };
+      }),
+
+    createConvite: protectedProcedure
+      .input(z.object({ email: z.string().email().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const codigo = nanoid(10);
+        
+        await createConvite({
+          email: input.email ?? "",
+          codigo,
+          criado_por: ctx.admin.id, 
+        });
+
+        const base =
+          process.env.FRONTEND_URL ||
+          process.env.CLIENT_URL ||
+          "http://localhost:5173";
+
+        return {
+          codigo,
+          link: `${base}/admin/registro?codigo=${codigo}`,
+        };
       }),
   }),
 
-/* -------- ADMINS -------- */
+  /* -------- ADMINS -------- */
   admin: router({
     list: protectedProcedure.query(() => listAdmins()),
 
@@ -240,7 +294,7 @@ export const appRouter = router({
         await createConvite({
           email: input.email ?? "",
           codigo,
-          criadoPor: ctx.admin.id,
+          criado_por: ctx.admin.id,
         });
 
         const base =
@@ -255,7 +309,7 @@ export const appRouter = router({
       }),
   }),
 
-/* -------- EXPERIMENTOS -------- */
+  /* -------- EXPERIMENTOS -------- */
   experimentos: router({
     listar: protectedProcedure.query(() => listExperimentos()),
 
@@ -273,8 +327,8 @@ export const appRouter = router({
             .replace(/[^a-z0-9]+/g, "-")
             .replace(/(^-|-$)+/g, ""),
           descricao: input.descricao ?? "",
-          adminId: ctx.admin.id,
-          criadoPor: ctx.admin.id,
+          admin_id: ctx.admin.id,
+          criado_por: ctx.admin.id,
         })
       ),
 
@@ -295,24 +349,38 @@ export const appRouter = router({
       .mutation(({ input }) => deleteExperimento(input.id)),
   }),
 
-/* -------- AMOSTRAS -------- */
+  /* -------- AMOSTRAS -------- */
   amostras: router({
     listar: publicProcedure
-      .input(z.object({ experimentoId: z.number() }))
-      .query(({ input }) => listAmostras(input.experimentoId)),
+      .input(z.object({ experimento_id: z.number() }))
+      .query(({ input }) => listAmostras(input.experimento_id)),
 
     create: protectedProcedure
       .input(
         z.object({
-          experimentoId: z.number(),
+          experimento_id: z.number(),
           nome: z.string(),
           codigo: z.string(),
           descricao: z.string().optional(),
+          ordem: z.number(),
         })
       )
       .mutation(({ input }) =>
-        createAmostra({ ...input, ordem: 0 })
+        createAmostra({ ...input })
       ),
+
+    reorder: protectedProcedure
+      .input(
+        z.object({
+          items: z.array(z.object({ id: z.number(), ordem: z.number() })),
+        })
+      )
+      .mutation(async ({ input }) => {
+        for (const item of input.items) {
+          await updateAmostra(item.id, { ordem: item.ordem });
+        }
+        return { success: true };
+      }),
 
     update: protectedProcedure
       .input(z.object({ id: z.number(), nome: z.string().optional() }))
@@ -323,17 +391,37 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAmostra(input.id)),
   }),
 
-/* -------- ATRIBUTOS -------- */
+  /* -------- ATRIBUTOS -------- */
   atributos: router({
     listar: publicProcedure
-      .input(z.object({ experimentoId: z.number() }))
-      .query(({ input }) => listAtributos(input.experimentoId)),
+      .input(z.object({ experimento_id: z.number() }))
+      .query(({ input }) => listAtributos(input.experimento_id)),
 
     create: protectedProcedure
-      .input(z.object({ experimentoId: z.number(), nome: z.string() }))
+      .input(
+        z.object({ 
+          experimento_id: z.number(), 
+          nome: z.string(),
+          ordem: z.number(),
+        })
+      )
       .mutation(({ input }) =>
-        createAtributo({ ...input, ordem: 0 })
+        createAtributo({ ...input })
       ),
+
+    reorder: protectedProcedure
+      .input(
+        z.object({
+          // CORRIGIDO: Alterado de a.number() para z.number()
+          items: z.array(z.object({ id: z.number(), ordem: z.number() })),
+        })
+      )
+      .mutation(async ({ input }) => {
+        for (const item of input.items) {
+          await updateAtributo(item.id, { ordem: item.ordem });
+        }
+        return { success: true };
+      }),
 
     update: protectedProcedure
       .input(z.object({ id: z.number(), nome: z.string().optional() }))
@@ -344,35 +432,35 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAtributo(input.id)),
   }),
 
-/* -------- DASHBOARD -------- */
+  /* -------- DASHBOARD -------- */
   dashboard: router({
     getData: protectedProcedure
-      .input(z.object({ experimentoId: z.number() }))
+      .input(z.object({ experimento_id: z.number() }))
       .query(async ({ input }) => {
-        const exp = await getExperimentoById(input.experimentoId);
+        const exp = await getExperimentoById(input.experimento_id);
 
         return {
           total: 0,
           sessoesFinalizadas: [],
-          amostras: await listAmostras(input.experimentoId),
-          atributos: await listAtributos(input.experimentoId),
+          amostras: await listAmostras(input.experimento_id),
+          atributos: await listAtributos(input.experimento_id),
           medias: [],
           experimento: exp,
         };
       }),
 
     exportar: protectedProcedure
-      .input(z.object({ experimentoId: z.number() }))
+      .input(z.object({ experimento_id: z.number() }))
       .query(async ({ input }) => {
         return {
-          amostras: await listAmostras(input.experimentoId),
-          atributos: await listAtributos(input.experimentoId),
-          respostas: await getRespostasCompletas(input.experimentoId),
+          amostras: await listAmostras(input.experimento_id),
+          atributos: await listAtributos(input.experimento_id),
+          respostas: await getRespostasCompletas(input.experimento_id),
         };
       }),
   }),
 
-/* -------- AVALIAÇÃO -------- */
+  /* -------- AVALIAÇÃO -------- */
   avaliacao: router({
     getExperimento: publicProcedure
       .input(z.object({ slug: z.string() }))
@@ -393,7 +481,7 @@ export const appRouter = router({
     iniciarSessao: publicProcedure
       .input(
         z.object({
-          experimentoId: z.number(),
+          experimento_id: z.number(),
           idade: z.number(),
           cidade: z.string(),
           estado: z.string(),
@@ -401,13 +489,13 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const exp = await getExperimentoById(input.experimentoId);
+        const exp = await getExperimentoById(input.experimento_id);
 
         if (!exp) throw new TRPCError({ code: "NOT_FOUND" });
 
         return createSessao({
           ...input,
-          adminId: exp.adminId,
+          admin_id: exp.admin_id,
           finalizado: false,
         });
       }),
@@ -415,9 +503,9 @@ export const appRouter = router({
     salvarResposta: publicProcedure
       .input(
         z.object({
-          sessaoId: z.number(),
-          atributoId: z.number(),
-          amostraId: z.number(),
+          sessao_id: z.number(),
+          atributo_id: z.number(),
+          amostra_id: z.number(),
           valor: z.number(),
         })
       )
@@ -426,12 +514,12 @@ export const appRouter = router({
     finalizar: publicProcedure
       .input(
         z.object({
-          sessaoId: z.number(),
-          tempoTotal: z.number(),
+          sessao_id: z.number(),
+          tempo_total: z.number(),
         })
       )
       .mutation(({ input }) =>
-        finalizarSessao(input.sessaoId, input.tempoTotal)
+        finalizarSessao(input.sessao_id, input.tempo_total)
       ),
   }),
 });

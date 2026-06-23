@@ -115,10 +115,10 @@ export async function updateUserRole(userId: number, role: "user" | "admin") {
 }
 
 // ─── Experimentos ─────────────────────────────────────────────────────────────
-export async function listExperimentos(adminId?: number): Promise<Experimento[]> {
+export async function listExperimentos(admin_id?: number): Promise<Experimento[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(experimentos).orderBy(desc(experimentos.criadoEm));
+  return db.select().from(experimentos).orderBy(desc(experimentos.criado_em));
 }
 
 export async function getExperimentoById(id: number): Promise<Experimento | undefined> {
@@ -144,13 +144,13 @@ export async function createExperimento(data: InsertExperimento): Promise<number
 
 export async function updateExperimento(
   id: number,
-  data: Partial<Omit<Experimento, "id" | "criadoEm">>
+  data: Partial<Omit<Experimento, "id" | "criado_em">>
 ): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db
     .update(experimentos)
-    .set({ ...data, atualizadoEm: new Date() })
+    .set({ ...data, atualizado_em: new Date() })
     .where(eq(experimentos.id, id));
 }
 
@@ -165,7 +165,7 @@ export async function ativarExperimento(id: number): Promise<void> {
   if (!db) return;
   const exp = await getExperimentoById(id);
   if (exp) {
-    await db.update(experimentos).set({ ativo: false }).where(eq(experimentos.adminId, exp.adminId));
+    await db.update(experimentos).set({ ativo: false }).where(eq(experimentos.admin_id, exp.admin_id));
   }
   await db.update(experimentos).set({ ativo: true }).where(eq(experimentos.id, id));
 }
@@ -177,13 +177,13 @@ export async function desativarExperimento(id: number): Promise<void> {
 }
 
 // ─── Amostras ─────────────────────────────────────────────────────────────────
-export async function listAmostras(experimentoId: number): Promise<Amostra[]> {
+export async function listAmostras(experimento_id: number): Promise<Amostra[]> {
   const db = await getDb();
   if (!db) return [];
   return db
     .select()
     .from(amostras)
-    .where(eq(amostras.experimentoId, experimentoId))
+    .where(eq(amostras.experimento_id, experimento_id))
     .orderBy(amostras.ordem);
 }
 
@@ -194,7 +194,7 @@ export async function createAmostra(data: InsertAmostra): Promise<number> {
   return result[0]?.id || 0;
 }
 
-export async function updateAmostra(id: number, data: Partial<Omit<Amostra, "id" | "criadoEm">>): Promise<void> {
+export async function updateAmostra(id: number, data: Partial<Omit<Amostra, "id" | "criado_em">>): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db.update(amostras).set(data).where(eq(amostras.id, id));
@@ -207,13 +207,13 @@ export async function deleteAmostra(id: number): Promise<void> {
 }
 
 // ─── Atributos ────────────────────────────────────────────────────────────────
-export async function listAtributos(experimentoId: number): Promise<Atributo[]> {
+export async function listAtributos(experimento_id: number): Promise<Atributo[]> {
   const db = await getDb();
   if (!db) return [];
   return db
     .select()
     .from(atributos)
-    .where(eq(atributos.experimentoId, experimentoId))
+    .where(eq(atributos.experimento_id, experimento_id))
     .orderBy(atributos.ordem);
 }
 
@@ -224,7 +224,7 @@ export async function createAtributo(data: InsertAtributo): Promise<number> {
   return result[0]?.id || 0;
 }
 
-export async function updateAtributo(id: number, data: Partial<Omit<Atributo, "id" | "criadoEm">>): Promise<void> {
+export async function updateAtributo(id: number, data: Partial<Omit<Atributo, "id" | "criado_em">>): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db.update(atributos).set(data).where(eq(atributos.id, id));
@@ -244,29 +244,29 @@ export async function createSessao(data: InsertSessao): Promise<number> {
   return result[0]?.id || 0;
 }
 
-export async function getSessaoExistente(experimentoId: number): Promise<Sessao | undefined> {
+export async function getSessaoExistente(experimento_id: number): Promise<Sessao | undefined> {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db
     .select()
     .from(sessoes)
-    .where(and(eq(sessoes.experimentoId, experimentoId), eq(sessoes.finalizado, false)))
+    .where(and(eq(sessoes.experimento_id, experimento_id), eq(sessoes.finalizado, false)))
     .limit(1);
   return result[0];
 }
 
 export async function finalizarSessao(
-  sessaoId: number,
-  tempoTotal: number,
-  finalizadoEm?: Date
+  sessao_id: number,
+  tempo_total: number,
+  finalizado_em?: Date
 ): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  console.log("📝 Atualizando sessão:", sessaoId, "Tempo:", tempoTotal);
+  console.log("📝 Atualizando sessão:", sessao_id, "Tempo:", tempo_total);
   await db
     .update(sessoes)
-    .set({ finalizado: true, tempoTotal, finalizadoEm: finalizadoEm || new Date() })
-    .where(eq(sessoes.id, sessaoId));
+    .set({ finalizado: true, tempo_total, finalizado_em: finalizado_em || new Date() })
+    .where(eq(sessoes.id, sessao_id));
   console.log("✅ Sessão finalizada com sucesso!");
 }
 
@@ -278,40 +278,40 @@ export async function upsertResposta(data: InsertResposta): Promise<void> {
     .insert(respostas)
     .values(data)
     .onConflictDoUpdate({
-      target: [respostas.sessaoId, respostas.atributoId, respostas.amostraId],
+      target: [respostas.sessao_id, respostas.atributo_id, respostas.amostra_id],
       set: { valor: data.valor },
     });
 }
 
-export async function listRespostasBySessao(sessaoId: number): Promise<Resposta[]> {
+export async function listRespostasBySessao(sessao_id: number): Promise<Resposta[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(respostas).where(eq(respostas.sessaoId, sessaoId));
+  return db.select().from(respostas).where(eq(respostas.sessao_id, sessao_id));
 }
 
-export async function getRespostasCompletas(experimentoId: number) {
+export async function getRespostasCompletas(experimento_id: number) {
   const db = await getDb();
   if (!db) return [];
   return db
     .select({
-      sessaoId: sessoes.id,
+      sessao_id: sessoes.id,
       idade: sessoes.idade,
       cidade: sessoes.cidade,
       estado: sessoes.estado,
       pais: sessoes.pais,
-      tempoTotal: sessoes.tempoTotal,
+      tempo_total: sessoes.tempo_total,
       atributoNome: atributos.nome,
       amostraNome: amostras.nome,
       valor: respostas.valor,
     })
     .from(sessoes)
-    .innerJoin(respostas, eq(respostas.sessaoId, sessoes.id))
-    .innerJoin(atributos, eq(atributos.id, respostas.atributoId))
-    .innerJoin(amostras, eq(amostras.id, respostas.amostraId))
-    .where(eq(sessoes.experimentoId, experimentoId));
+    .innerJoin(respostas, eq(respostas.sessao_id, sessoes.id))
+    .innerJoin(atributos, eq(atributos.id, respostas.atributo_id))
+    .innerJoin(amostras, eq(amostras.id, respostas.amostra_id))
+    .where(eq(sessoes.experimento_id, experimento_id));
 }
 
-export async function getDashboardData(experimentoId: number) {
+export async function getDashboardData(experimento_id: number) {
   const db = await getDb();
   if (!db) {
     console.error("❌ Database not connected");
@@ -322,20 +322,20 @@ export async function getDashboardData(experimentoId: number) {
     const totalResult = await db.execute(sql`
       SELECT COUNT(*) as count 
       FROM sessoes 
-      WHERE "experimentoId" = ${experimentoId}
+      WHERE "experimento_id" = ${experimento_id}
     `);
     
     const concluidasResult = await db.execute(sql`
       SELECT COUNT(*) as count 
       FROM sessoes 
-      WHERE "experimentoId" = ${experimentoId} 
+      WHERE "experimento_id" = ${experimento_id} 
       AND finalizado = true
     `);
     
     const tempoResult = await db.execute(sql`
-      SELECT AVG("tempoTotal") as avg 
+      SELECT AVG("tempo_total") as avg 
       FROM sessoes 
-      WHERE "experimentoId" = ${experimentoId}
+      WHERE "experimento_id" = ${experimento_id}
     `);
 
     const totalSessoes = Number(totalResult[0]?.count) || 0;
@@ -363,11 +363,25 @@ export async function createAdmin(data: InsertAdmin): Promise<Admin> {
   return result[0];
 }
 
-export async function getAdminByEmail(email: string): Promise<Admin | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(admins).where(eq(admins.email, email)).limit(1);
-  return result[0];
+export async function getAdminByEmail(email: string) {
+  try {
+    // 1. Força a obter a instância correta e atualizada do banco
+    const currentDb = await getDb();
+    
+    if (!currentDb) throw new Error("Não foi possível estabelecer ligação com a base de dados.");
+
+    const result = await currentDb
+      .select()
+      .from(admins)
+      .where(eq(admins.email, email))
+      .limit(1);
+
+    console.log("Resultado:", result);
+    return result[0];
+  } catch (err) {
+    console.error("ERRO getAdminByEmail:", err);
+    throw err;
+  }
 }
 
 export async function getAdminById(id: number): Promise<Admin | undefined> {
@@ -380,15 +394,15 @@ export async function getAdminById(id: number): Promise<Admin | undefined> {
 export async function listAdmins(): Promise<Admin[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(admins).orderBy(admins.criadoEm);
+  return db.select().from(admins).orderBy(admins.criado_em);
 }
 
-export async function updateAdmin(id: number, data: Partial<Omit<Admin, "id" | "criadoEm">>): Promise<void> {
+export async function updateAdmin(id: number, data: Partial<Omit<Admin, "id" | "criado_em">>): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db
     .update(admins)
-    .set({ ...data, atualizadoEm: new Date() })
+    .set({ ...data, atualizado_em: new Date() })
     .where(eq(admins.id, id));
 }
 
@@ -397,7 +411,7 @@ export async function promoteAdminByEmail(email: string): Promise<Admin | undefi
   if (!db) return undefined;
   const result = await db
     .update(admins)
-    .set({ ativo: true, atualizadoEm: new Date() })
+    .set({ ativo: true, atualizado_em: new Date() })
     .where(eq(admins.email, email))
     .returning();
   return result[0];
@@ -408,7 +422,7 @@ export async function deactivateAdminByEmail(email: string): Promise<Admin | und
   if (!db) return undefined;
   const result = await db
     .update(admins)
-    .set({ ativo: false, atualizadoEm: new Date() })
+    .set({ ativo: false, atualizado_em: new Date() })
     .where(eq(admins.email, email))
     .returning();
   return result[0];
@@ -429,17 +443,17 @@ export async function getConviteByCode(codigo: string): Promise<Convite | undefi
   return result[0];
 }
 
-export async function listConvites(criadoPor: number): Promise<Convite[]> {
+export async function listConvites(criado_por: number): Promise<Convite[]> {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(convites).where(eq(convites.criadoPor, criadoPor)).orderBy(desc(convites.criadoEm));
+  return db.select().from(convites).where(eq(convites.criado_por, criado_por)).orderBy(desc(convites.criado_em));
 }
 
-export async function acceptConvite(codigo: string, adminId: number): Promise<void> {
+export async function acceptConvite(codigo: string, admin_id: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db
     .update(convites)
-    .set({ usado: true, usadoPor: adminId, usadoEm: new Date() })
+    .set({ usado: true, usadoPor: admin_id, usadoEm: new Date() })
     .where(eq(convites.codigo, codigo));
 }

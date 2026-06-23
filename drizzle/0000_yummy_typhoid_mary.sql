@@ -38,7 +38,7 @@ CREATE TABLE "convites" (
 	"criado_por" integer NOT NULL,
 	"usado" boolean DEFAULT false NOT NULL,
 	"usadoPor" integer,
-	"usadoEm" timestamp,
+	"usado_em" timestamp,
 	"expiradoEm" timestamp,
 	"criadoEm" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "convites_codigo_unique" UNIQUE("codigo")

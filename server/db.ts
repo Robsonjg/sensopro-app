@@ -448,12 +448,20 @@ export async function listConvites(criado_por: number): Promise<Convite[]> {
   if (!db) return [];
   return db.select().from(convites).where(eq(convites.criado_por, criado_por)).orderBy(desc(convites.criado_em));
 }
+export async function listSessoesFinalizadas(experimento_id: number): Promise<Sessao[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select()
+    .from(sessoes)
+    .where(and(eq(sessoes.experimento_id, experimento_id), eq(sessoes.finalizado, true)));
+}
 
 export async function acceptConvite(codigo: string, admin_id: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db
     .update(convites)
-    .set({ usado: true, usadoPor: admin_id, usadoEm: new Date() })
+    .set({ usado: true, usadoPor: admin_id, usado_em: new Date() })
     .where(eq(convites.codigo, codigo));
 }

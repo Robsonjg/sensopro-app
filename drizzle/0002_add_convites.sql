@@ -5,7 +5,7 @@ CREATE TABLE `convites` (
 	`criado_por` int NOT NULL,
 	`usado` boolean NOT NULL DEFAULT false,
 	`usadoPor` int,
-	`usadoEm` timestamp,
+	`usado_em` timestamp,
 	`expiradoEm` timestamp,
 	`criadoEm` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `convites_id` PRIMARY KEY(`id`),

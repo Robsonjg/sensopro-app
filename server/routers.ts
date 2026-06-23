@@ -34,6 +34,7 @@ import {
   getConviteByCode,
   upsertResposta,
   getDashboardData,
+  listSessoesFinalizadas,
 } from "./db.js";
 
 import {
@@ -336,7 +337,7 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAtributo(input.id)),
   }),
 
-  /* -------- DASHBOARD ULTRA COMPATÍVEL (PREENCHIMENTO DE QUADROS) -------- */
+  /* -------- DASHBOARD ULTRA COMPATÍVEL CORRIGIDO -------- */
   dashboard: router({
     getData: protectedProcedure
       .input(z.object({ experimento_id: z.number() }))
@@ -344,48 +345,32 @@ export const appRouter = router({
         try {
           const exp = await getExperimentoById(input.experimento_id);
           
-          // Busca métricas gerais agregadas (total de sessões e concluídas)
+          // Busca métricas gerais agregadas
           const dbStats = await getDashboardData(input.experimento_id);
 
-          // Busca as listas de amostras, atributos e respostas direto do banco
+          // Busca as listas reais do banco de dados pelas funções do db.ts
           const amostrasLista = await listAmostras(input.experimento_id) ?? [];
           const atributosLista = await listAtributos(input.experimento_id) ?? [];
           const respostasCompletas = await getRespostasCompletas(input.experimento_id) ?? [];
-
-          // Garante que tudo seja tratado estritamente como Array
-          const amostras = Array.isArray(amostrasLista) ? amostrasLista : [];
-          const atributos = Array.isArray(atributosLista) ? atributosLista : [];
-          const respostas = Array.isArray(respostasCompletas) ? respostasCompletas : [];
-
-          // Cria um mapa plano de médias fictício/inicial estruturado caso o front use 
-          // a lógica de cruzamento direto de chaves: [amostra_id, atributo_id]
-          const mediasCalculadas = respostas.length > 0 ? respostas : amostras.map(am => ({
-            amostra_id: am.id,
-            amostraNome: am.nome,
-            valores: atributos.map(at => ({
-              atributo_id: at.id,
-              atributoNome: at.nome,
-              valor: 0
-            }))
-          }));
+          
+          // Chamando a função nova e isolada para evitar erros de import de query!
+          const sessoesLista = await listSessoesFinalizadas(input.experimento_id);
 
           return {
-            total: dbStats?.totalSessoes ?? 0,
-            sessoesFinalizadas: dbStats?.sessoesConcluidas ?? 0,
-            amostras,
-            atributos,
-            respostas, // Caso o componente busque por data.respostas
-            medias: mediasCalculadas, // Caso o componente busque por data.medias
+            total: dbStats?.totalSessoes ?? 0, 
+            sessoesFinalizadas: sessoesLista,  // Entrega o array perfeito para o front
+            amostras: Array.isArray(amostrasLista) ? amostrasLista : [],
+            atributos: Array.isArray(atributosLista) ? atributosLista : [],
+            medias: Array.isArray(respostasCompletas) ? respostasCompletas : [], 
             experimento: exp ?? null,
           };
         } catch (error) {
           console.error("❌ Erro ao processar dados consolidados do Dashboard:", error);
           return {
             total: 0,
-            sessoesFinalizadas: 0,
+            sessoesFinalizadas: [], 
             amostras: [],
             atributos: [],
-            respostas: [],
             medias: [],
             experimento: null,
           };
@@ -402,6 +387,7 @@ export const appRouter = router({
         };
       }),
   }),
+
   /* -------- AVALIAÇÃO -------- */
   avaliacao: router({
     getExperimento: publicProcedure

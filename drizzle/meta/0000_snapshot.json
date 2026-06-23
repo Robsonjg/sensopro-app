@@ -233,8 +233,8 @@
           "primaryKey": false,
           "notNull": false
         },
-        "usadoEm": {
-          "name": "usadoEm",
+        "usado_em": {
+          "name": "usado_em",
           "type": "timestamp",
           "primaryKey": false,
           "notNull": false

@@ -136,7 +136,7 @@ export const convites = pgTable("convites", {
   criado_por: integer("criado_por").notNull(),
   usado: boolean("usado").default(false).notNull(),
   usadoPor: integer("usadoPor"),
-  usadoEm: timestamp("usadoEm"),
+  usado_em: timestamp("usado_em"),
   expiradoEm: timestamp("expiradoEm"),
   criado_em: timestamp("criado_em").defaultNow().notNull(),
 });

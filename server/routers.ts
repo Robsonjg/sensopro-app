@@ -77,17 +77,17 @@ async function loginAdminFn({ input, ctx }: { input: any; ctx: any }) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Credenciais inválidas" });
   }
 
-  // CORRIGIDO: Alterado de admin.senha para admin.senha_hash
   const senhaValida = await bcrypt.compare(input.senha, admin.senha_hash);
   if (!senhaValida) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Credenciais inválidas" });
   }
 
-  // GRAVAÇÃO DO COOKIE: Salvando estritamente em minúsculo 'admin_id'
   const sessionData = JSON.stringify({ admin_id: admin.id });
+  
+  // CORRIGIDO PARA PRODUÇÃO: SameSite=None e Secure são obrigatórios para Vercel + Railway
   ctx.res.setHeader(
     "Set-Cookie",
-    `admin_session=${encodeURIComponent(sessionData)}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${60 * 60 * 24 * 7}`
+    `admin_session=${encodeURIComponent(sessionData)}; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=${60 * 60 * 24 * 7}`
   );
 
   return { 
@@ -101,9 +101,10 @@ async function loginAdminFn({ input, ctx }: { input: any; ctx: any }) {
 }
 
 async function logoutAdminFn({ ctx }: { ctx: any }) {
+  // CORRIGIDO PARA PRODUÇÃO: Mesmas diretivas no logout para limpar com sucesso
   ctx.res.setHeader(
     "Set-Cookie",
-    "admin_session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+    "admin_session=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0"
   );
   return { success: true };
 }

@@ -336,24 +336,42 @@ export const appRouter = router({
       .mutation(({ input }) => deleteAtributo(input.id)),
   }),
 
-  /* -------- DASHBOARD (INTEGRADO COM OS DADOS REAIS) -------- */
+  /* -------- DASHBOARD (PROTEGIDO CONTRA TELA BRANCA) -------- */
   dashboard: router({
     getData: protectedProcedure
       .input(z.object({ experimento_id: z.number() }))
       .query(async ({ input }) => {
-        const exp = await getExperimentoById(input.experimento_id);
-        
-        // CORRIGIDO: Consumindo as métricas reais que a Bianca e avaliadores gerarem no Supabase
-        const dbStats = await getDashboardData(input.experimento_id);
+        try {
+          const exp = await getExperimentoById(input.experimento_id);
+          
+          // Busca os dados consolidados do banco
+          const dbStats = await getDashboardData(input.experimento_id);
 
-        return {
-          total: dbStats.totalSessoes,
-          sessoesFinalizadas: dbStats.sessoesConcluidas,
-          amostras: await listAmostras(input.experimento_id),
-          atributos: await listAtributos(input.experimento_id),
-          medias: [],
-          experimento: exp,
-        };
+          // Busca as amostras e atributos reais
+          const amostrasLista = await listAmostras(input.experimento_id);
+          const atributosLista = await listAtributos(input.experimento_id);
+
+          return {
+            total: dbStats?.totalSessoes ?? 0,
+            sessoesFinalizadas: dbStats?.sessoesConcluidas ?? 0,
+            // Força a garantia de que sempre retornará um Array, evitando quebras de .map()
+            amostras: Array.isArray(amostrasLista) ? amostrasLista : [],
+            atributos: Array.isArray(atributosLista) ? atributosLista : [],
+            medias: [], // Mantido como array padrão seguro
+            experimento: exp ?? null,
+          };
+        } catch (error) {
+          console.error("❌ Erro ao carregar dados do Dashboard no tRPC:", error);
+          // Retorno de fallback seguro para o frontend não quebrar de jeito nenhum
+          return {
+            total: 0,
+            sessoesFinalizadas: 0,
+            amostras: [],
+            atributos: [],
+            medias: [],
+            experimento: null,
+          };
+        }
       }),
 
     exportar: protectedProcedure

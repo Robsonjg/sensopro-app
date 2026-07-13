@@ -126,8 +126,6 @@ export default function AvaliacaoPage() {
         toast.error("Digite seu estado");
         return;
       }
-
-      // Iniciar avaliação
       handleIniciar();
     }
   }
@@ -139,6 +137,7 @@ export default function AvaliacaoPage() {
       setFormStep("idade");
     } else if (formStep === "estado") {
       setFormStep("cidade");
+    }
   }
 
   async function handleIniciar() {
@@ -148,6 +147,7 @@ export default function AvaliacaoPage() {
         idade: parseInt(idade),
         cidade: cidade.trim(),
         estado: estado.trim(),
+        pais: "Brasil",
         experimento_id: experimento!.id,
       });
       setSessao({ 
@@ -156,6 +156,7 @@ export default function AvaliacaoPage() {
         idade: parseInt(idade),
         cidade: cidade.trim(),
         estado: estado.trim(),
+        pais: "Brasil",
         observacoes: null,
         experimento_id: experimento!.id,
         finalizado: false,
@@ -326,7 +327,6 @@ export default function AvaliacaoPage() {
                   <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "idade" ? "bg-primary" : "bg-primary/30"}`} />
                   <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "cidade" ? "bg-primary" : "bg-primary/30"}`} />
                   <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "estado" ? "bg-primary" : "bg-primary/30"}`} />
-                  <div className={`flex-1 h-1 rounded-full ml-1 ${formStep === "pais" ? "bg-primary" : "bg-primary/30"}`} />
                 </div>
 
                 {/* Etapa 1 - Nome */}
@@ -407,7 +407,7 @@ export default function AvaliacaoPage() {
                     />
                   </div>
                 )}
-                
+
                 {/* Botões de navegação */}
                 <div className="flex items-center justify-between mt-8">
                   <Button

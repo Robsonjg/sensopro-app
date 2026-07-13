@@ -25,7 +25,7 @@ interface Sessao {
 
 type Respostas = Record<number, Record<number, number>>;
 
-type FormStep = "nome" | "idade" | "cidade" | "estado" | "pais";
+type FormStep = "nome" | "idade" | "cidade" | "estado";
 
 export default function AvaliacaoPage() {
   const params = useParams<{ slug: string }>();
@@ -46,7 +46,6 @@ export default function AvaliacaoPage() {
   const [idade, setIdade] = useState("");
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
-  const [pais, setPais] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [idadeError, setIdadeError] = useState("");
   const [sessao, setSessao] = useState<Sessao | null>(null);
@@ -127,12 +126,7 @@ export default function AvaliacaoPage() {
         toast.error("Digite seu estado");
         return;
       }
-      setFormStep("pais");
-    } else if (formStep === "pais") {
-      if (!pais.trim()) {
-        toast.error("Digite seu país");
-        return;
-      }
+
       // Iniciar avaliação
       handleIniciar();
     }
@@ -145,9 +139,6 @@ export default function AvaliacaoPage() {
       setFormStep("idade");
     } else if (formStep === "estado") {
       setFormStep("cidade");
-    } else if (formStep === "pais") {
-      setFormStep("estado");
-    }
   }
 
   async function handleIniciar() {
@@ -157,7 +148,6 @@ export default function AvaliacaoPage() {
         idade: parseInt(idade),
         cidade: cidade.trim(),
         estado: estado.trim(),
-        pais: pais.trim(),
         experimento_id: experimento!.id,
       });
       setSessao({ 
@@ -166,7 +156,6 @@ export default function AvaliacaoPage() {
         idade: parseInt(idade),
         cidade: cidade.trim(),
         estado: estado.trim(),
-        pais: pais.trim(),
         observacoes: null,
         experimento_id: experimento!.id,
         finalizado: false,
@@ -418,25 +407,7 @@ export default function AvaliacaoPage() {
                     />
                   </div>
                 )}
-
-                {/* Etapa 5 - País */}
-                {formStep === "pais" && (
-                  <div className="space-y-6">
-                    <div className="text-center mb-4">
-                      <h2 className="text-xl font-semibold">Qual é o seu país?</h2>
-                      <p className="text-sm text-muted-foreground mt-1">Isso nos ajuda a entender melhor os resultados</p>
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="Ex: Brasil"
-                      value={pais}
-                      onChange={(e) => setPais(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleNextStep()}
-                      className="rounded-xl h-12 text-center"
-                    />
-                  </div>
-                )}
-
+                
                 {/* Botões de navegação */}
                 <div className="flex items-center justify-between mt-8">
                   <Button
@@ -454,7 +425,7 @@ export default function AvaliacaoPage() {
                     disabled={submitting}
                     className="rounded-full gap-2 bg-primary hover:bg-primary/90 text-white"
                   >
-                    {formStep === "pais" ? (submitting ? "Iniciando..." : "Iniciar Avaliação") : "Próximo"}
+                    {formStep === "estado" ? (submitting ? "Iniciando..." : "Iniciar Avaliação") : "Próximo"}
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>

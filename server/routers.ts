@@ -252,19 +252,27 @@ export const appRouter = router({
       .query(({ input }) => getExperimentoById(input.id)),
 
     criar: protectedProcedure
-      .input(z.object({ titulo: z.string(), descricao: z.string().optional() }))
-      .mutation(({ input, ctx }) =>
-        createExperimento({
-          titulo: input.titulo,
-          slug: input.titulo
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/(^-|-$)+/g, ""),
-          descricao: input.descricao ?? "",
-          admin_id: ctx.admin.id,
-          criado_por: ctx.admin.id,
-        })
-      ),
+  .input(
+    z.object({
+      titulo: z.string(),
+      descricao: z.string().optional(),
+      slug: z.string().optional(),
+    })
+  )
+  .mutation(({ input, ctx }) =>
+    createExperimento({
+      titulo: input.titulo,
+      slug: (input.slug?.trim() || input.titulo)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)+/g, ""),
+      descricao: input.descricao ?? "",
+      admin_id: ctx.admin.id,
+      criado_por: ctx.admin.id,
+    })
+  ),
 
     update: protectedProcedure
       .input(z.object({ id: z.number(), titulo: z.string().optional() }))

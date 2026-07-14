@@ -163,11 +163,11 @@ export async function deleteExperimento(id: number): Promise<void> {
 export async function ativarExperimento(id: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  const exp = await getExperimentoById(id);
-  if (exp) {
-    await db.update(experimentos).set({ ativo: false }).where(eq(experimentos.admin_id, exp.admin_id));
-  }
-  await db.update(experimentos).set({ ativo: true }).where(eq(experimentos.id, id));
+
+  await db
+    .update(experimentos)
+    .set({ ativo: true })
+    .where(eq(experimentos.id, id));
 }
 
 export async function desativarExperimento(id: number): Promise<void> {

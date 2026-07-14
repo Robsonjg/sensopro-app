@@ -186,6 +186,31 @@ export async function listAmostras(experimento_id: number): Promise<Amostra[]> {
     .where(eq(amostras.experimento_id, experimento_id))
     .orderBy(amostras.ordem);
 }
+export async function getAmostraByCodigo(
+  experimento_id: number,
+  codigo: string
+): Promise<Amostra | undefined> {
+  const db = await getDb();
+
+  if (!db) {
+    return undefined;
+  }
+
+  const codigoNormalizado = codigo.trim();
+
+  const result = await db
+    .select()
+    .from(amostras)
+    .where(
+      and(
+        eq(amostras.experimento_id, experimento_id),
+        eq(amostras.codigo, codigoNormalizado)
+      )
+    )
+    .limit(1);
+
+  return result[0];
+}
 
 export async function createAmostra(data: InsertAmostra): Promise<number> {
   const db = await getDb();

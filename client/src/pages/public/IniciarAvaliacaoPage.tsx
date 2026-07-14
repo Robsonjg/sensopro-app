@@ -31,6 +31,8 @@ interface Sessao {
 
 type FormStep = "nome" | "idade" | "cidade" | "estado" | "amostra";
 
+const ATRIBUTOS_POR_PAGINA = 3;
+
 export default function IniciarAvaliacaoPage() {
   const utils = trpc.useUtils();
 
@@ -63,9 +65,16 @@ export default function IniciarAvaliacaoPage() {
   const [tempo_total, settempo_total] = useState(0);
   const [showObservacoes, setShowObservacoes] = useState(false);
 
-  const currentAtributo = atributos[atributo_idx];
-  const totalSteps = atributos.length;
-  const currentStep = atributo_idx;
+  const paginaAtual = Math.floor(atributo_idx / ATRIBUTOS_POR_PAGINA);
+  const totalPaginas = Math.ceil(atributos.length / ATRIBUTOS_POR_PAGINA);
+
+  const atributosPagina = atributos.slice(
+    paginaAtual * ATRIBUTOS_POR_PAGINA,
+    paginaAtual * ATRIBUTOS_POR_PAGINA + ATRIBUTOS_POR_PAGINA
+  );
+
+  const totalSteps = totalPaginas;
+  const currentStep = paginaAtual;
   const progress =
     totalSteps > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
 
@@ -239,27 +248,33 @@ export default function IniciarAvaliacaoPage() {
   }
 
   async function handleProximo() {
-    if (!sessao || !currentAmostra || !currentAtributo) return;
-
-    const valor = getValor(currentAtributo.id);
+    if (!sessao || !currentAmostra || atributosPagina.length === 0) return;
 
     setSubmitting(true);
+
     try {
-      await salvarMut.mutateAsync({
-        sessao_id: sessao.id,
-        atributo_id: currentAtributo.id,
-        amostra_id: currentAmostra.id,
-        valor,
-      });
+      for (const atributo of atributosPagina) {
+        const valor = getValor(atributo.id);
+
+        await salvarMut.mutateAsync({
+          sessao_id: sessao.id,
+          atributo_id: atributo.id,
+          amostra_id: currentAmostra.id,
+          valor,
+        });
+      }
     } catch (e: any) {
-      toast.error("Erro ao salvar resposta.");
+      toast.error("Erro ao salvar respostas.");
       setSubmitting(false);
       return;
     }
+
     setSubmitting(false);
 
-    if (atributo_idx < atributos.length - 1) {
-      setatributo_idx((i) => i + 1);
+    const proximoIndice = atributo_idx + ATRIBUTOS_POR_PAGINA;
+
+    if (proximoIndice < atributos.length) {
+      setatributo_idx(proximoIndice);
       return;
     }
 
@@ -268,7 +283,7 @@ export default function IniciarAvaliacaoPage() {
 
   function handleAnterior() {
     if (atributo_idx > 0) {
-      setatributo_idx((i) => i - 1);
+      setatributo_idx((i) => Math.max(0, i - ATRIBUTOS_POR_PAGINA));
     }
   }
 
@@ -292,7 +307,7 @@ export default function IniciarAvaliacaoPage() {
   }
 
   const isFirst = atributo_idx === 0;
-  const isLast = atributo_idx === atributos.length - 1;
+  const isLast = atributo_idx + ATRIBUTOS_POR_PAGINA >= atributos.length;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -485,14 +500,14 @@ export default function IniciarAvaliacaoPage() {
             </div>
           )}
 
-          {phase === "avaliacao" && !showObservacoes && currentAmostra && currentAtributo && (
+          {phase === "avaliacao" && !showObservacoes && currentAmostra && atributosPagina.length > 0 && (
             <div className="animate-fade-in" key={`${currentAmostra.id}-${atributo_idx}`}>
               <div className="flex items-center justify-between mb-4 px-1">
                 <span className="text-xs text-muted-foreground">
                   Amostra selecionada: {currentAmostra.codigo}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  {currentStep + 1} / {totalSteps}
+                  Página {currentStep + 1} de {totalSteps}
                 </span>
               </div>
 
@@ -507,25 +522,35 @@ export default function IniciarAvaliacaoPage() {
               </div>
 
               <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-8">
-                <div className="mb-8">
-                  <h2
-                    className="text-xl font-semibold text-foreground mb-2"
-                    style={{ fontFamily: "'Playfair Display', serif" }}
-                  >
-                    {currentAtributo.nome}
-                  </h2>
-                  {currentAtributo.descricao && (
-                    <p className="text-sm text-muted-foreground">{currentAtributo.descricao}</p>
-                  )}
-                </div>
+                <div className="space-y-8">
+                  {atributosPagina.map((atributo) => (
+                    <div
+                      key={atributo.id}
+                      className="border-b border-border/60 pb-6 last:border-b-0 last:pb-0"
+                    >
+                      <div className="mb-4">
+                        <h2
+                          className="text-lg font-semibold text-foreground mb-1"
+                          style={{ fontFamily: "'Playfair Display', serif" }}
+                        >
+                          {atributo.nome}
+                        </h2>
 
-                <div className="space-y-6 py-4">
-                  <SensorSlider
-                    value={getValor(currentAtributo.id)}
-                    onChange={(val) => setValor(currentAtributo.id, val)}
-                    min={0}
-                    max={100}
-                  />
+                        {atributo.descricao && (
+                          <p className="text-sm text-muted-foreground">
+                            {atributo.descricao}
+                          </p>
+                        )}
+                      </div>
+
+                      <SensorSlider
+                        value={getValor(atributo.id)}
+                        onChange={(val) => setValor(atributo.id, val)}
+                        min={0}
+                        max={100}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
 

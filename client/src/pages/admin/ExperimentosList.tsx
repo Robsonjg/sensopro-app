@@ -37,7 +37,7 @@ export default function ExperimentosList({ onSelect, onDashboard }: Props) {
     onSuccess: () => {
       utils.experimentos.listar.invalidate();
       setCreateOpen(false);
-      setForm({ titulo: "", descricao: "" });
+      setForm({ titulo: "", descricao: "", slug: "" });
       toast.success("Experimento criado com sucesso!");
     },
     onError: (e) => toast.error(e.message),
@@ -65,7 +65,7 @@ export default function ExperimentosList({ onSelect, onDashboard }: Props) {
   });
 
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({ titulo: "", descricao: "" });
+  const [form, setForm] = useState({ titulo: "", descricao: "", slug: "" });
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
@@ -226,26 +226,40 @@ export default function ExperimentosList({ onSelect, onDashboard }: Props) {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Título *</label>
-              <Input
-                placeholder="Ex: Avaliação de Cafés Especiais"
-                value={form.titulo}
-                onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground">Descrição</label>
-              <Textarea
-                placeholder="Descreva o objetivo deste experimento…"
-                value={form.descricao}
-                onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
-                className="rounded-xl resize-none"
-                rows={3}
-              />
-            </div>
-          </div>
+  <div className="space-y-1.5">
+    <label className="text-sm font-medium text-foreground">Título *</label>
+    <Input
+      placeholder="Ex: Avaliação Sensorial de Café"
+      value={form.titulo}
+      onChange={(e) => setForm((f) => ({ ...f, titulo: e.target.value }))}
+      className="rounded-xl"
+    />
+  </div>
+
+  <div className="space-y-1.5">
+    <label className="text-sm font-medium text-foreground">Slug do link</label>
+    <Input
+      placeholder="Ex: cafe"
+      value={form.slug}
+      onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
+      className="rounded-xl"
+    />
+    <p className="text-xs text-muted-foreground">
+      Esse texto vai aparecer no link. Exemplo: /avaliacao/cafe
+    </p>
+  </div>
+
+  <div className="space-y-1.5">
+    <label className="text-sm font-medium text-foreground">Descrição</label>
+    <Textarea
+      placeholder="Descreva o objetivo deste experimento…"
+      value={form.descricao}
+      onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
+      className="rounded-xl resize-none"
+      rows={3}
+    />
+  </div>
+</div>
           <DialogFooter>
             <Button variant="ghost" onClick={() => setCreateOpen(false)} className="rounded-full">
               Cancelar

@@ -1,9 +1,7 @@
-
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useParams } from "wouter";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -34,14 +32,7 @@ interface Sessao {
 type FormStep = "nome" | "idade" | "cidade" | "estado" | "amostra";
 
 export default function IniciarAvaliacaoPage() {
-  const params = useParams<{ slug: string }>();
-  const slug = params.slug;
   const utils = trpc.useUtils();
-
-  const { data, isLoading, error } = trpc.avaliacao.getExperimento.useQuery(
-    { slug: slug! },
-    { enabled: !!slug, retry: false }
-  );
 
   const iniciarMut = trpc.avaliacao.iniciarSessao.useMutation();
   const salvarMut = trpc.avaliacao.salvarResposta.useMutation();
@@ -61,6 +52,8 @@ export default function IniciarAvaliacaoPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [sessao, setSessao] = useState<Sessao | null>(null);
+  const [experimento, setExperimento] = useState<any | null>(null);
+  const [atributos, setAtributos] = useState<any[]>([]);
   const [currentAmostra, setCurrentAmostra] = useState<any | null>(null);
   const [atributo_idx, setatributo_idx] = useState(0);
   const [respostas, setRespostas] = useState<Record<number, number>>({});
@@ -69,9 +62,6 @@ export default function IniciarAvaliacaoPage() {
   const [tempoInicio, setTempoInicio] = useState<number | null>(null);
   const [tempo_total, settempo_total] = useState(0);
   const [showObservacoes, setShowObservacoes] = useState(false);
-
-  const experimento = data?.experimento;
-  const atributos = data?.atributos ?? [];
 
   const currentAtributo = atributos[atributo_idx];
   const totalSteps = atributos.length;
@@ -110,6 +100,8 @@ export default function IniciarAvaliacaoPage() {
     setBuscaAmostraErro("");
     setSubmitting(false);
     setSessao(null);
+    setExperimento(null);
+    setAtributos([]);
     setCurrentAmostra(null);
     setatributo_idx(0);
     setRespostas({});
@@ -141,7 +133,7 @@ export default function IniciarAvaliacaoPage() {
     }
 
     if (formStep === "idade") {
-      const idadeNum = parseInt(idade);
+      const idadeNum = parseInt(idade, 10);
       if (!idade.trim() || isNaN(idadeNum) || idadeNum <= 0 || idadeNum > 120) {
         setIdadeError("Digite uma idade válida (1-120)");
         return;
@@ -170,7 +162,7 @@ export default function IniciarAvaliacaoPage() {
     }
 
     if (formStep === "amostra") {
-      handleIniciarAvaliacao();
+      void handleIniciarAvaliacao();
     }
   }
 
@@ -196,8 +188,6 @@ export default function IniciarAvaliacaoPage() {
   }
 
   async function handleIniciarAvaliacao() {
-    if (!experimento) return;
-
     if (!codigoAmostra.trim()) {
       setBuscaAmostraErro("Digite o número da amostra.");
       return;
@@ -207,37 +197,39 @@ export default function IniciarAvaliacaoPage() {
     setBuscaAmostraErro("");
 
     try {
-      const amostra = await utils.avaliacao.buscarAmostra.fetch({
-        experimento_id: experimento.id,
+      const resultado = await utils.avaliacao.buscarAmostraGlobal.fetch({
         codigo: codigoAmostra.trim(),
       });
 
       const sessao_id = await iniciarMut.mutateAsync({
-        idade: parseInt(idade),
+        idade: parseInt(idade, 10),
         cidade: cidade.trim(),
         estado: estado.trim(),
         pais: "Brasil",
-        experimento_id: experimento.id,
+        experimento_id: resultado.experimento.id,
       });
 
       setSessao({
         id: sessao_id,
         nome: nome.trim(),
-        idade: parseInt(idade),
+        idade: parseInt(idade, 10),
         cidade: cidade.trim(),
         estado: estado.trim(),
         pais: "Brasil",
         observacoes: null,
-        experimento_id: experimento.id,
+        experimento_id: resultado.experimento.id,
         finalizado: false,
         tempo_total: null,
       });
 
-      setCurrentAmostra(amostra);
+      setExperimento(resultado.experimento);
+      setAtributos(resultado.atributos ?? []);
+      setCurrentAmostra(resultado.amostra);
       setatributo_idx(0);
       setRespostas({});
       setObservacoes("");
       setShowObservacoes(false);
+      setTempoInicio(null);
       setPhase("avaliacao");
     } catch (e: any) {
       setBuscaAmostraErro("Amostra não encontrada. Confira o número digitado.");
@@ -302,33 +294,6 @@ export default function IniciarAvaliacaoPage() {
   const isFirst = atributo_idx === 0;
   const isLast = atributo_idx === atributos.length - 1;
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <span className="text-sm text-muted-foreground">Carregando avaliação…</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !experimento) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-4">
-        <div className="text-center max-w-sm animate-fade-in">
-          <div className="w-14 h-14 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-7 h-7 text-muted-foreground" />
-          </div>
-          <h2 className="text-lg font-semibold mb-2">Avaliação indisponível</h2>
-          <p className="text-sm text-muted-foreground">
-            Esta avaliação não foi encontrada ou não está ativa no momento.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border/60 bg-white/90 backdrop-blur-sm sticky top-0 z-10">
@@ -341,7 +306,9 @@ export default function IniciarAvaliacaoPage() {
             SensoPro
           </span>
           <span className="text-muted-foreground/40 text-sm">·</span>
-          <span className="text-sm text-muted-foreground truncate">{experimento.titulo}</span>
+          <span className="text-sm text-muted-foreground truncate">
+            {experimento?.titulo ?? "Iniciar avaliação"}
+          </span>
         </div>
 
         {phase === "avaliacao" && !showObservacoes && (
@@ -667,6 +634,21 @@ export default function IniciarAvaliacaoPage() {
                     Voltar ao início
                   </Button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {phase === "erro" && (
+            <div className="animate-fade-in">
+              <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-8 text-center">
+                <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-4" />
+                <h2 className="text-xl font-semibold mb-2">Erro ao iniciar avaliação</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Não foi possível carregar a amostra informada.
+                </p>
+                <Button onClick={resetForm} className="rounded-full">
+                  Voltar ao início
+                </Button>
               </div>
             </div>
           )}

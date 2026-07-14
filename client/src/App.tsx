@@ -20,7 +20,7 @@ function App() {
           <Route path="/" component={HomePage} />
           <Route path="/admin/login" component={AdminLoginPage} />
           <Route path="/admin" component={AdminPage} />
-          <Route path="/iniciar-avaliacao/:slug" component={IniciarAvaliacaoPage} />
+          <Route path="/iniciar-avaliacao" component={IniciarAvaliacaoPage} />
           <Route path="/avaliacao/:slug" component={AvaliacaoPage} />
           <Route component={NotFound} />
         </Switch>

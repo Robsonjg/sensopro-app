@@ -19,6 +19,7 @@ import {
   getAdminById,
   getExperimentoById,
   getExperimentoBySlug,
+  getAmostraByCodigo,
   getRespostasCompletas,
   listAdmins,
   listAmostras,
@@ -428,6 +429,30 @@ export const appRouter = router({
           atributos: await listAtributos(exp.id),
         };
       }),
+    buscarAmostra: publicProcedure
+  .input(
+    z.object({
+      experimento_id: z.number(),
+      codigo: z.string().min(1),
+    })
+  )
+  .query(async ({ input }) => {
+    const codigo = input.codigo.trim();
+
+    const amostra = await getAmostraByCodigo(
+      input.experimento_id,
+      codigo
+    );
+
+    if (!amostra) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Amostra não encontrada.",
+      });
+    }
+
+    return amostra;
+  }),
 
     iniciarSessao: publicProcedure
       .input(z.object({ experimento_id: z.number(), idade: z.number(), cidade: z.string(), estado: z.string(), pais: z.string() }))

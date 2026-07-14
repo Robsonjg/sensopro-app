@@ -5,10 +5,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { useParams } from "wouter";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { FlaskConical, ChevronRight, ChevronLeft, CheckCircle2, AlertCircle, Clock } from "lucide-react";
+import {
+  FlaskConical,
+  ChevronRight,
+  ChevronLeft,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+} from "lucide-react";
 import SensorSlider from "@/components/SensorSlider";
 
-type Phase = "entrada" | "avaliacao" | "obrigado" | "erro" | "jaRespondeu";
+type Phase =
+  | "entrada"
+  | "buscarAmostra"
+  | "avaliacao"
+  | "obrigado"
+  | "erro"
+  | "jaRespondeu";
 
 interface Sessao {
   id: number;
@@ -24,12 +37,12 @@ interface Sessao {
 }
 
 type Respostas = Record<number, Record<number, number>>;
-
 type FormStep = "nome" | "idade" | "cidade" | "estado";
 
 export default function AvaliacaoPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
+  const utils = trpc.useUtils();
 
   const { data, isLoading, error } = trpc.avaliacao.getExperimento.useQuery(
     { slug: slug! },
@@ -50,8 +63,11 @@ export default function AvaliacaoPage() {
   const [idadeError, setIdadeError] = useState("");
   const [sessao, setSessao] = useState<Sessao | null>(null);
   const [respostas, setRespostas] = useState<Respostas>({});
-  const [amostra_idx, setamostra_idx] = useState(0);
   const [atributo_idx, setatributo_idx] = useState(0);
+  const [codigoAmostra, setCodigoAmostra] = useState("");
+  const [currentAmostraId, setCurrentAmostraId] = useState<number | null>(null);
+  const [amostrasAvaliadas, setAmostrasAvaliadas] = useState<number[]>([]);
+  const [buscaAmostraErro, setBuscaAmostraErro] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [tempoInicio, setTempoInicio] = useState<number | null>(null);
   const [tempo_total, settempo_total] = useState(0);
@@ -83,10 +99,11 @@ export default function AvaliacaoPage() {
   const atributos = data?.atributos ?? [];
 
   const totalSteps = amostras.length * atributos.length;
-  const currentStep = amostra_idx * atributos.length + atributo_idx;
+  const currentStep = amostrasAvaliadas.length * atributos.length + atributo_idx;
   const progress = totalSteps > 0 ? Math.round((currentStep / totalSteps) * 100) : 0;
 
-  const currentAmostra = amostras[amostra_idx];
+  const currentAmostra =
+    amostras.find((item: any) => item.id === currentAmostraId) ?? null;
   const currentAtributo = atributos[atributo_idx];
 
   function getValor(amostra_id: number, atributo_id: number): number {
@@ -150,7 +167,8 @@ export default function AvaliacaoPage() {
         pais: "Brasil",
         experimento_id: experimento!.id,
       });
-      setSessao({ 
+
+      setSessao({
         id: sessao_id,
         nome: nome.trim(),
         idade: parseInt(idade),
@@ -160,9 +178,16 @@ export default function AvaliacaoPage() {
         observacoes: null,
         experimento_id: experimento!.id,
         finalizado: false,
-        tempo_total: null
+        tempo_total: null,
       });
-      setPhase("avaliacao");
+
+      setCodigoAmostra("");
+      setCurrentAmostraId(null);
+      setAmostrasAvaliadas([]);
+      setatributo_idx(0);
+      setBuscaAmostraErro("");
+      setShowObservacoes(false);
+      setPhase("buscarAmostra");
     } catch (e: any) {
       toast.error(e?.message ?? "Erro ao iniciar avaliação.");
     } finally {
@@ -170,25 +195,35 @@ export default function AvaliacaoPage() {
     }
   }
 
-  async function handleSalvarEObservacoes() {
-    if (!sessao || !currentAmostra || !currentAtributo) return;
-    const valor = getValor(currentAmostra.id, currentAtributo.id);
-
-    setSubmitting(true);
-    try {
-      await salvarMut.mutateAsync({
-        sessao_id: sessao.id,
-        atributo_id: currentAtributo.id,
-        amostra_id: currentAmostra.id,
-        valor,
-      });
-    } catch (e: any) {
-      toast.error("Erro ao salvar resposta.");
-      setSubmitting(false);
+  async function handleBuscarAmostra() {
+    if (!experimento || !codigoAmostra.trim()) {
+      setBuscaAmostraErro("Digite o código da amostra.");
       return;
     }
-    setSubmitting(false);
-    setShowObservacoes(true);
+
+    setSubmitting(true);
+    setBuscaAmostraErro("");
+
+    try {
+      const amostra = await utils.avaliacao.buscarAmostra.fetch({
+        experimento_id: experimento.id,
+        codigo: codigoAmostra.trim(),
+      });
+
+      if (amostrasAvaliadas.includes(amostra.id)) {
+        setBuscaAmostraErro("Essa amostra já foi avaliada nesta sessão.");
+        setSubmitting(false);
+        return;
+      }
+
+      setCurrentAmostraId(amostra.id);
+      setatributo_idx(0);
+      setPhase("avaliacao");
+    } catch (e: any) {
+      setBuscaAmostraErro("Amostra não encontrada. Confira o código digitado.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleFinalizarComObservacoes() {
@@ -226,26 +261,34 @@ export default function AvaliacaoPage() {
 
     if (atributo_idx < atributos.length - 1) {
       setatributo_idx((i) => i + 1);
-    } else if (amostra_idx < amostras.length - 1) {
-      setamostra_idx((i) => i + 1);
-      setatributo_idx(0);
-    } else {
-      // Última resposta - mostrar campo de observações
-      setShowObservacoes(true);
+      return;
     }
+
+    const novasAmostrasAvaliadas = [...amostrasAvaliadas, currentAmostra.id];
+    setAmostrasAvaliadas(novasAmostrasAvaliadas);
+
+    if (novasAmostrasAvaliadas.length >= amostras.length) {
+      setShowObservacoes(true);
+      return;
+    }
+
+    setCurrentAmostraId(null);
+    setCodigoAmostra("");
+    setatributo_idx(0);
+    setBuscaAmostraErro("");
+    setPhase("buscarAmostra");
   }
 
   function handleAnterior() {
     if (atributo_idx > 0) {
       setatributo_idx((i) => i - 1);
-    } else if (amostra_idx > 0) {
-      setamostra_idx((i) => i - 1);
-      setatributo_idx(atributos.length - 1);
     }
   }
 
-  const isFirst = amostra_idx === 0 && atributo_idx === 0;
-  const isLast = amostra_idx === amostras.length - 1 && atributo_idx === atributos.length - 1;
+  const isFirst = atributo_idx === 0;
+  const isLast =
+    amostrasAvaliadas.length === amostras.length - 1 &&
+    atributo_idx === atributos.length - 1;
 
   if (isLoading) {
     return (
@@ -300,7 +343,6 @@ export default function AvaliacaoPage() {
 
       <main className="flex-1 flex items-start justify-center px-4 py-10">
         <div className="w-full max-w-xl">
-          {/* ── Tela de entrada com etapas ── */}
           {phase === "entrada" && (
             <div className="animate-fade-in">
               <div className="bg-white rounded-2xl border border-border/60 shadow-sm overflow-hidden mb-4">
@@ -321,15 +363,13 @@ export default function AvaliacaoPage() {
               </div>
 
               <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-8">
-                {/* Indicador de etapa */}
                 <div className="flex items-center justify-between mb-8">
                   <div className={`flex-1 h-1 rounded-full mr-1 ${formStep === "nome" ? "bg-primary" : "bg-primary/30"}`} />
                   <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "idade" ? "bg-primary" : "bg-primary/30"}`} />
                   <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "cidade" ? "bg-primary" : "bg-primary/30"}`} />
-                  <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "estado" ? "bg-primary" : "bg-primary/30"}`} />
+                  <div className={`flex-1 h-1 rounded-full ml-1 ${formStep === "estado" ? "bg-primary" : "bg-primary/30"}`} />
                 </div>
 
-                {/* Etapa 1 - Nome */}
                 {formStep === "nome" && (
                   <div className="space-y-6">
                     <div className="text-center mb-4">
@@ -347,7 +387,6 @@ export default function AvaliacaoPage() {
                   </div>
                 )}
 
-                {/* Etapa 2 - Idade */}
                 {formStep === "idade" && (
                   <div className="space-y-6">
                     <div className="text-center mb-4">
@@ -371,7 +410,6 @@ export default function AvaliacaoPage() {
                   </div>
                 )}
 
-                {/* Etapa 3 - Cidade */}
                 {formStep === "cidade" && (
                   <div className="space-y-6">
                     <div className="text-center mb-4">
@@ -389,7 +427,6 @@ export default function AvaliacaoPage() {
                   </div>
                 )}
 
-                {/* Etapa 4 - Estado */}
                 {formStep === "estado" && (
                   <div className="space-y-6">
                     <div className="text-center mb-4">
@@ -408,7 +445,6 @@ export default function AvaliacaoPage() {
                   </div>
                 )}
 
-                {/* Botões de navegação */}
                 <div className="flex items-center justify-between mt-8">
                   <Button
                     variant="ghost"
@@ -419,13 +455,15 @@ export default function AvaliacaoPage() {
                     <ChevronLeft className="w-4 h-4" />
                     Voltar
                   </Button>
-                  
+
                   <Button
                     onClick={handleNextStep}
                     disabled={submitting}
                     className="rounded-full gap-2 bg-primary hover:bg-primary/90 text-white"
                   >
-                    {formStep === "estado" ? (submitting ? "Iniciando..." : "Iniciar Avaliação") : "Próximo"}
+                    {formStep === "estado"
+                      ? (submitting ? "Iniciando..." : "Iniciar Avaliação")
+                      : "Próximo"}
                     <ChevronRight className="w-4 h-4" />
                   </Button>
                 </div>
@@ -433,12 +471,66 @@ export default function AvaliacaoPage() {
             </div>
           )}
 
-          {/* ── Tela de avaliação ── */}
+          {phase === "buscarAmostra" && (
+            <div className="animate-fade-in">
+              <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-8">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-semibold text-foreground mb-2">
+                    Digite o código da amostra
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Amostra {amostrasAvaliadas.length + 1} de {amostras.length}
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <Input
+                    type="text"
+                    placeholder="Ex: 381"
+                    value={codigoAmostra}
+                    onChange={(e) => {
+                      setCodigoAmostra(e.target.value);
+                      setBuscaAmostraErro("");
+                    }}
+                    onKeyDown={(e) => e.key === "Enter" && handleBuscarAmostra()}
+                    className="rounded-xl h-12 text-center"
+                  />
+
+                  {buscaAmostraErro && (
+                    <p className="text-sm text-destructive text-center">
+                      {buscaAmostraErro}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between mt-8">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setPhase("entrada")}
+                    className="rounded-full gap-2"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Voltar
+                  </Button>
+
+                  <Button
+                    onClick={handleBuscarAmostra}
+                    disabled={submitting}
+                    className="rounded-full gap-2 bg-primary hover:bg-primary/90 text-white"
+                  >
+                    {submitting ? "Procurando..." : "Procurar amostra"}
+                    <ChevronRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {phase === "avaliacao" && !showObservacoes && currentAmostra && currentAtributo && (
-            <div className="animate-fade-in" key={`${amostra_idx}-${atributo_idx}`}>
+            <div className="animate-fade-in" key={`${currentAmostra.id}-${atributo_idx}`}>
               <div className="flex items-center justify-between mb-4 px-1">
                 <span className="text-xs text-muted-foreground">
-                  Amostra {amostra_idx + 1} de {amostras.length}
+                  Amostra {amostrasAvaliadas.length + 1} de {amostras.length}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {currentStep + 1} / {totalSteps}
@@ -488,7 +580,7 @@ export default function AvaliacaoPage() {
                   <ChevronLeft className="w-4 h-4" />
                   Anterior
                 </Button>
-                
+
                 <Button
                   onClick={handleProximo}
                   className="rounded-full gap-2 bg-primary hover:bg-primary/90 text-white"
@@ -500,7 +592,6 @@ export default function AvaliacaoPage() {
             </div>
           )}
 
-          {/* ── Tela de observações finais ── */}
           {phase === "avaliacao" && showObservacoes && (
             <div className="animate-fade-in">
               <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-8">
@@ -539,7 +630,6 @@ export default function AvaliacaoPage() {
             </div>
           )}
 
-          {/* ── Tela de agradecimento ── */}
           {phase === "obrigado" && (
             <div className="animate-fade-in text-center">
               <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-12">

@@ -6,6 +6,7 @@ import HomePage from "./pages/public/HomePage";
 import AdminLoginPage from "./pages/admin/AdminLoginPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AvaliacaoPage from "./pages/public/AvaliacaoPage";
+import IniciarAvaliacaoPage from "./pages/public/IniciarAvaliacaoPage";
 import NotFound from "./pages/NotFound";
 
 /* 🔥 IMPORTANTE: fora do componente */
@@ -19,6 +20,7 @@ function App() {
           <Route path="/" component={HomePage} />
           <Route path="/admin/login" component={AdminLoginPage} />
           <Route path="/admin" component={AdminPage} />
+          <Route path="/iniciar-avaliacao/:slug" component={IniciarAvaliacaoPage} />
           <Route path="/avaliacao/:slug" component={AvaliacaoPage} />
           <Route component={NotFound} />
         </Switch>

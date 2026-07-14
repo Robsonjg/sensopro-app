@@ -231,6 +231,28 @@ export async function deleteAmostra(id: number): Promise<void> {
   await db.delete(amostras).where(eq(amostras.id, id));
 }
 
+export async function getAmostraByCodigoGlobal(codigo: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const codigoNormalizado = codigo.trim();
+
+  const result = await db
+    .select({
+      id: amostras.id,
+      experimento_id: amostras.experimento_id,
+      codigo: amostras.codigo,
+      nome: amostras.nome,
+      descricao: amostras.descricao,
+      ordem: amostras.ordem,
+      criado_em: amostras.criado_em,
+    })
+    .from(amostras)
+    .where(eq(amostras.codigo, codigoNormalizado))
+    .limit(1);
+
+  return result[0];
+}
 // ─── Atributos ────────────────────────────────────────────────────────────────
 export async function listAtributos(experimento_id: number): Promise<Atributo[]> {
   const db = await getDb();

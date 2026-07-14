@@ -18,6 +18,7 @@ export default function SensorSlider({
   const [isInteracting, setIsInteracting] = useState(false);
 
   const percentage = ((value - min) / (max - min)) * 100;
+  const hasValue = value > min;
 
   function handleMouseUp() {
     setIsDragging(false);
@@ -29,10 +30,12 @@ export default function SensorSlider({
 
   function updateValueFromPosition(clientX: number) {
     if (!sliderRef.current) return;
+
     const rect = sliderRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const newPercentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
     const newValue = Math.round((newPercentage / 100) * (max - min) + min);
+
     onChange(newValue);
     setIsInteracting(true);
   }
@@ -82,9 +85,7 @@ export default function SensorSlider({
 
   return (
     <div className="w-full space-y-8">
-      {/* Slider Container */}
       <div className="space-y-8">
-        {/* Slider Track */}
         <div
           ref={sliderRef}
           className="relative h-12 flex items-center cursor-pointer select-none"
@@ -96,54 +97,44 @@ export default function SensorSlider({
           aria-valuemax={max}
           aria-valuenow={value}
         >
-          {/* Track Background */}
           <div className="absolute w-full h-1 bg-slate-300 rounded-full" />
 
-          {/* Vertical Marks (2 total: apenas nas pontas) */}
           <div className="absolute w-full h-full flex items-center justify-between px-0">
-            {/* Mark Left (0%) */}
             <div className="flex flex-col items-center">
               <div className="w-1 h-6 bg-slate-400" />
             </div>
 
-            {/* Mark Right (100%) */}
             <div className="flex flex-col items-center">
               <div className="w-1 h-6 bg-slate-400" />
             </div>
           </div>
 
-          {/* Draggable Indicator - Visible only when interacting */}
-          {isInteracting && (
+          {(hasValue || isInteracting) && (
             <div
               className="absolute transform -translate-x-1/2 flex flex-col items-center transition-all"
               style={{ left: `${percentage}%` }}
             >
-              {/* Traço azul vertical */}
               <div className="w-1 h-8 bg-blue-500 rounded-sm" />
-
-              {/* Bolinha debaixo do traço */}
               <div className="w-4 h-4 bg-blue-500 rounded-full mt-1 shadow-md" />
             </div>
           )}
         </div>
 
-        {/* Labels debaixo dos traços - Pouco e Muito */}
         <div className="relative w-full flex items-start justify-between px-0 text-xs font-medium text-slate-700">
-          {/* Label Esquerda - Pouco */}
           <div className="text-left">
             <p>Pouco</p>
           </div>
 
-          {/* Label Direita - Muito */}
           <div className="text-right">
             <p>Muito</p>
           </div>
         </div>
       </div>
 
-      {/* Instrução simples */}
       <div className="text-center text-xs text-muted-foreground">
-        {isInteracting ? "Clique em qualquer ponto para ajustar" : "Clique na linha para avaliar"}
+        {hasValue || isInteracting
+          ? "Clique em qualquer ponto para ajustar"
+          : "Clique na linha para avaliar"}
       </div>
     </div>
   );

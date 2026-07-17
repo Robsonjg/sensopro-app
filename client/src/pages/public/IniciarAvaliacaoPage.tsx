@@ -29,7 +29,7 @@ interface Sessao {
   tempo_total: number | null;
 }
 
-type FormStep = "nome" | "idade" | "cidade" | "estado" | "amostra";
+type FormStep = "nome" | "amostra";
 
 const ATRIBUTOS_POR_PAGINA = 4;
 
@@ -44,12 +44,8 @@ export default function IniciarAvaliacaoPage() {
   const [formStep, setFormStep] = useState<FormStep>("nome");
 
   const [nome, setNome] = useState("");
-  const [idade, setIdade] = useState("");
-  const [cidade, setCidade] = useState("");
-  const [estado, setEstado] = useState("");
   const [codigoAmostra, setCodigoAmostra] = useState("");
 
-  const [idadeError, setIdadeError] = useState("");
   const [buscaAmostraErro, setBuscaAmostraErro] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -101,11 +97,7 @@ export default function IniciarAvaliacaoPage() {
     setPhase("entrada");
     setFormStep("nome");
     setNome("");
-    setIdade("");
-    setCidade("");
-    setEstado("");
     setCodigoAmostra("");
-    setIdadeError("");
     setBuscaAmostraErro("");
     setSubmitting(false);
     setSessao(null);
@@ -137,35 +129,6 @@ export default function IniciarAvaliacaoPage() {
         toast.error("Digite seu nome");
         return;
       }
-      setFormStep("idade");
-      return;
-    }
-
-    if (formStep === "idade") {
-      const idadeNum = parseInt(idade, 10);
-      if (!idade.trim() || isNaN(idadeNum) || idadeNum <= 0 || idadeNum > 120) {
-        setIdadeError("Digite uma idade válida (1-120)");
-        return;
-      }
-      setIdadeError("");
-      setFormStep("cidade");
-      return;
-    }
-
-    if (formStep === "cidade") {
-      if (!cidade.trim()) {
-        toast.error("Digite sua cidade");
-        return;
-      }
-      setFormStep("estado");
-      return;
-    }
-
-    if (formStep === "estado") {
-      if (!estado.trim()) {
-        toast.error("Digite seu estado");
-        return;
-      }
       setFormStep("amostra");
       return;
     }
@@ -176,23 +139,8 @@ export default function IniciarAvaliacaoPage() {
   }
 
   function handlePrevStep() {
-    if (formStep === "idade") {
-      setFormStep("nome");
-      return;
-    }
-
-    if (formStep === "cidade") {
-      setFormStep("idade");
-      return;
-    }
-
-    if (formStep === "estado") {
-      setFormStep("cidade");
-      return;
-    }
-
     if (formStep === "amostra") {
-      setFormStep("estado");
+      setFormStep("nome");
     }
   }
 
@@ -211,20 +159,17 @@ export default function IniciarAvaliacaoPage() {
       });
 
       const sessao_id = await iniciarMut.mutateAsync({
-        idade: parseInt(idade, 10),
-        cidade: cidade.trim(),
-        estado: estado.trim(),
-        pais: "Brasil",
         experimento_id: resultado.experimento.id,
+        nome: nome.trim(),
       });
 
       setSessao({
         id: sessao_id,
         nome: nome.trim(),
-        idade: parseInt(idade, 10),
-        cidade: cidade.trim(),
-        estado: estado.trim(),
-        pais: "Brasil",
+        idade: null,
+        cidade: null,
+        estado: null,
+        pais: null,
         observacoes: null,
         experimento_id: resultado.experimento.id,
         finalizado: false,
@@ -350,7 +295,7 @@ export default function IniciarAvaliacaoPage() {
                     Iniciar avaliação
                   </h1>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Preencha seus dados e digite o número da amostra para começar.
+                    Preencha seu nome e digite o número da amostra para começar.
                   </p>
                 </div>
               </div>
@@ -358,9 +303,6 @@ export default function IniciarAvaliacaoPage() {
               <div className="bg-white rounded-2xl border border-border/60 shadow-sm p-8">
                 <div className="flex items-center justify-between mb-8">
                   <div className={`flex-1 h-1 rounded-full mr-1 ${formStep === "nome" ? "bg-primary" : "bg-primary/30"}`} />
-                  <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "idade" ? "bg-primary" : "bg-primary/30"}`} />
-                  <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "cidade" ? "bg-primary" : "bg-primary/30"}`} />
-                  <div className={`flex-1 h-1 rounded-full mx-1 ${formStep === "estado" ? "bg-primary" : "bg-primary/30"}`} />
                   <div className={`flex-1 h-1 rounded-full ml-1 ${formStep === "amostra" ? "bg-primary" : "bg-primary/30"}`} />
                 </div>
 
@@ -369,80 +311,16 @@ export default function IniciarAvaliacaoPage() {
                     <div className="text-center mb-4">
                       <h2 className="text-xl font-semibold">Qual é o seu nome?</h2>
                       <p className="text-sm text-muted-foreground mt-1">
-                        Sua resposta é anônima e confidencial
+                        Sua resposta será identificada no relatório.
                       </p>
                     </div>
                     <Input
                       type="text"
-                      placeholder="Digite seu nome completo"
+                      placeholder="Digite seu nome"
                       value={nome}
                       onChange={(e) => setNome(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleNextStep()}
                       className="rounded-xl h-12 text-center"
-                    />
-                  </div>
-                )}
-
-                {formStep === "idade" && (
-                  <div className="space-y-6">
-                    <div className="text-center mb-4">
-                      <h2 className="text-xl font-semibold">Qual é a sua idade?</h2>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Sua resposta é anônima
-                      </p>
-                    </div>
-                    <Input
-                      type="number"
-                      placeholder="Digite sua idade"
-                      value={idade}
-                      onChange={(e) => {
-                        setIdade(e.target.value);
-                        setIdadeError("");
-                      }}
-                      onKeyDown={(e) => e.key === "Enter" && handleNextStep()}
-                      className={`rounded-xl h-12 text-center ${idadeError ? "border-destructive" : ""}`}
-                    />
-                    {idadeError && (
-                      <p className="text-xs text-destructive text-center">{idadeError}</p>
-                    )}
-                  </div>
-                )}
-
-                {formStep === "cidade" && (
-                  <div className="space-y-6">
-                    <div className="text-center mb-4">
-                      <h2 className="text-xl font-semibold">Qual é a sua cidade?</h2>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Isso nos ajuda a entender melhor os resultados
-                      </p>
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="Digite sua cidade"
-                      value={cidade}
-                      onChange={(e) => setCidade(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && handleNextStep()}
-                      className="rounded-xl h-12 text-center"
-                    />
-                  </div>
-                )}
-
-                {formStep === "estado" && (
-                  <div className="space-y-6">
-                    <div className="text-center mb-4">
-                      <h2 className="text-xl font-semibold">Qual é o seu estado?</h2>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Use a sigla (ex: SP, RJ, MG)
-                      </p>
-                    </div>
-                    <Input
-                      type="text"
-                      placeholder="Ex: SP"
-                      value={estado}
-                      onChange={(e) => setEstado(e.target.value.toUpperCase())}
-                      onKeyDown={(e) => e.key === "Enter" && handleNextStep()}
-                      className="rounded-xl h-12 text-center uppercase"
-                      maxLength={2}
                     />
                   </div>
                 )}
@@ -504,7 +382,7 @@ export default function IniciarAvaliacaoPage() {
             <div className="animate-fade-in" key={`${currentAmostra.id}-${atributo_idx}`}>
               <div className="flex items-center justify-between mb-4 px-1">
                 <span className="text-xs text-muted-foreground">
-                  Amostra selecionada: {currentAmostra.codigo}
+                  Participante: {sessao?.nome ?? "—"}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   Página {currentStep + 1} de {totalSteps}

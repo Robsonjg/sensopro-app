@@ -32,15 +32,10 @@ export type InsertUser = typeof users.$inferInsert;
 // ─── Admins ──────────────────────────────────────────────────────────────────
 export const admins = pgTable("admins", {
   id: serial("id").primaryKey(),
-
   email: varchar("email", { length: 320 }).notNull().unique(),
-
   senha_hash: text("senha_hash").notNull(),
-
   nome: varchar("nome", { length: 255 }),
-
   ativo: boolean("ativo").default(true).notNull(),
-
   criado_em: timestamp("criado_em").defaultNow().notNull(),
   atualizado_em: timestamp("atualizado_em").defaultNow().notNull(),
 });
@@ -98,6 +93,7 @@ export const sessoes = pgTable("sessoes", {
   id: serial("id").primaryKey(),
   admin_id: integer("admin_id").notNull(),
   experimento_id: integer("experimento_id").notNull(),
+  nome: varchar("nome", { length: 255 }),
   idade: integer("idade"),
   cidade: varchar("cidade", { length: 128 }),
   estado: varchar("estado", { length: 64 }),

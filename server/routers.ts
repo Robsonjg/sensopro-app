@@ -496,17 +496,27 @@ export const appRouter = router({
   }),
 
     iniciarSessao: publicProcedure
-      .input(z.object({ experimento_id: z.number(), idade: z.number(), cidade: z.string(), estado: z.string(), pais: z.string() }))
-      .mutation(async ({ input }) => {
-        const exp = await getExperimentoById(input.experimento_id);
-        if (!exp) throw new TRPCError({ code: "NOT_FOUND" });
+  .input(
+    z.object({
+      experimento_id: z.number(),
+      nome: z.string().min(1),
+    })
+  )
+  .mutation(async ({ input }) => {
+    const exp = await getExperimentoById(input.experimento_id);
+    if (!exp) throw new TRPCError({ code: "NOT_FOUND" });
 
-        return createSessao({
-          ...input,
-          admin_id: exp.admin_id,
-          finalizado: false,
-        });
-      }),
+    return createSessao({
+      experimento_id: input.experimento_id,
+      nome: input.nome.trim(),
+      idade: null,
+      cidade: null,
+      estado: null,
+      pais: null,
+      admin_id: exp.admin_id,
+      finalizado: false,
+    });
+  }),
 
     salvarResposta: publicProcedure
       .input(z.object({ sessao_id: z.number(), atributo_id: z.number(), amostra_id: z.number(), valor: z.number() }))

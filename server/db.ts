@@ -341,16 +341,17 @@ export async function getRespostasCompletas(experimento_id: number) {
   if (!db) return [];
   return db
     .select({
-      sessao_id: sessoes.id,
-      idade: sessoes.idade,
-      cidade: sessoes.cidade,
-      estado: sessoes.estado,
-      pais: sessoes.pais,
-      tempo_total: sessoes.tempo_total,
-      atributoNome: atributos.nome,
-      amostraNome: amostras.nome,
-      valor: respostas.valor,
-    })
+  sessao_id: sessoes.id,
+  nome: sessoes.nome,
+  idade: sessoes.idade,
+  cidade: sessoes.cidade,
+  estado: sessoes.estado,
+  pais: sessoes.pais,
+  tempo_total: sessoes.tempo_total,
+  atributoNome: atributos.nome,
+  amostraNome: amostras.nome,
+  valor: respostas.valor,
+})
     .from(sessoes)
     .innerJoin(respostas, eq(respostas.sessao_id, sessoes.id))
     .innerJoin(atributos, eq(atributos.id, respostas.atributo_id))

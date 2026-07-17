@@ -31,7 +31,7 @@ interface Sessao {
 
 type FormStep = "nome" | "idade" | "cidade" | "estado" | "amostra";
 
-const ATRIBUTOS_POR_PAGINA = 3;
+const ATRIBUTOS_POR_PAGINA = 4;
 
 export default function IniciarAvaliacaoPage() {
   const utils = trpc.useUtils();

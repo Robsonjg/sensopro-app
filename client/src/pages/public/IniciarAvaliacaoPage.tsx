@@ -31,8 +31,6 @@ interface Sessao {
 
 type FormStep = "nome" | "amostra";
 
-const ATRIBUTOS_POR_PAGINA = 4;
-
 export default function IniciarAvaliacaoPage() {
   const utils = trpc.useUtils();
 
@@ -60,6 +58,8 @@ export default function IniciarAvaliacaoPage() {
   const [tempoInicio, setTempoInicio] = useState<number | null>(null);
   const [tempo_total, settempo_total] = useState(0);
   const [showObservacoes, setShowObservacoes] = useState(false);
+
+  const ATRIBUTOS_POR_PAGINA = Math.ceil(atributos.length / 2) || 1;
 
   const paginaAtual = Math.floor(atributo_idx / ATRIBUTOS_POR_PAGINA);
   const totalPaginas = Math.ceil(atributos.length / ATRIBUTOS_POR_PAGINA);

@@ -9,6 +9,8 @@ import {
   createAtributo,
   createAdmin,
   createExperimento,
+  duplicateExperimento,
+  clearExperimentResults,
   createSessao,
   deleteAmostra,
   deleteAtributo,
@@ -19,8 +21,6 @@ import {
   getAdminById,
   getExperimentoById,
   getExperimentoBySlug,
-  getAmostraByCodigo,
-  getAmostraByCodigoGlobal,
   getRespostasCompletas,
   listAdmins,
   listAmostras,
@@ -252,31 +252,27 @@ export const appRouter = router({
       .query(({ input }) => getExperimentoById(input.id)),
 
     criar: protectedProcedure
-  .input(
-    z.object({
-      titulo: z.string(),
-      descricao: z.string().optional(),
-      slug: z.string().optional(),
-    })
-  )
-  .mutation(({ input, ctx }) =>
-    createExperimento({
-      titulo: input.titulo,
-      slug: (input.slug?.trim() || input.titulo)
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)+/g, ""),
-      descricao: input.descricao ?? "",
-      admin_id: ctx.admin.id,
-      criado_por: ctx.admin.id,
-    })
-  ),
+      .input(z.object({ titulo: z.string(), descricao: z.string().optional() }))
+      .mutation(({ input, ctx }) =>
+        createExperimento({
+          titulo: input.titulo,
+          slug: input.titulo
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)+/g, ""),
+          descricao: input.descricao ?? "",
+          admin_id: ctx.admin.id,
+          criado_por: ctx.admin.id,
+        })
+      ),
 
     update: protectedProcedure
       .input(z.object({ id: z.number(), titulo: z.string().optional() }))
       .mutation(({ input }) => updateExperimento(input.id, input)),
+
+    duplicar: protectedProcedure
+      .input(z.object({ id: z.number(), titulo: z.string().optional() }))
+      .mutation(({ input }) => duplicateExperimento(input.id, input.titulo)),
 
     ativar: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -421,6 +417,13 @@ export const appRouter = router({
           respostas: await getRespostasCompletas(input.experimento_id),
         };
       }),
+
+    limparResultados: protectedProcedure
+      .input(z.object({ experimento_id: z.number() }))
+      .mutation(async ({ input }) => {
+        await clearExperimentResults(input.experimento_id);
+        return { success: true };
+      }),
   }),
 
   /* -------- AVALIAÇÃO -------- */
@@ -438,85 +441,19 @@ export const appRouter = router({
           atributos: await listAtributos(exp.id),
         };
       }),
-    buscarAmostra: publicProcedure
-  .input(
-    z.object({
-      experimento_id: z.number(),
-      codigo: z.string().min(1),
-    })
-  )
-  .query(async ({ input }) => {
-    const codigo = input.codigo.trim();
-
-    const amostra = await getAmostraByCodigo(
-      input.experimento_id,
-      codigo
-    );
-
-    if (!amostra) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Amostra não encontrada.",
-      });
-    }
-
-    return amostra;
-  }),
-
-    buscarAmostraGlobal: publicProcedure
-  .input(
-    z.object({
-      codigo: z.string().min(1),
-    })
-  )
-  .query(async ({ input }) => {
-    const amostra = await getAmostraByCodigoGlobal(input.codigo);
-
-    if (!amostra) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Amostra não encontrada.",
-      });
-    }
-
-    const experimento = await getExperimentoById(amostra.experimento_id);
-
-    if (!experimento || !experimento.ativo) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "Experimento não encontrado ou inativo.",
-      });
-    }
-
-    return {
-      amostra,
-      experimento,
-      atributos: await listAtributos(experimento.id),
-    };
-  }),
 
     iniciarSessao: publicProcedure
-  .input(
-    z.object({
-      experimento_id: z.number(),
-      nome: z.string().min(1),
-    })
-  )
-  .mutation(async ({ input }) => {
-    const exp = await getExperimentoById(input.experimento_id);
-    if (!exp) throw new TRPCError({ code: "NOT_FOUND" });
+      .input(z.object({ experimento_id: z.number(), idade: z.number(), cidade: z.string(), estado: z.string(), pais: z.string() }))
+      .mutation(async ({ input }) => {
+        const exp = await getExperimentoById(input.experimento_id);
+        if (!exp) throw new TRPCError({ code: "NOT_FOUND" });
 
-    return createSessao({
-      experimento_id: input.experimento_id,
-      nome: input.nome.trim(),
-      idade: null,
-      cidade: null,
-      estado: null,
-      pais: null,
-      admin_id: exp.admin_id,
-      finalizado: false,
-    });
-  }),
+        return createSessao({
+          ...input,
+          admin_id: exp.admin_id,
+          finalizado: false,
+        });
+      }),
 
     salvarResposta: publicProcedure
       .input(z.object({ sessao_id: z.number(), atributo_id: z.number(), amostra_id: z.number(), valor: z.number() }))

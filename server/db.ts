@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 import {
   Admin,
@@ -152,6 +153,97 @@ export async function updateExperimento(
     .update(experimentos)
     .set({ ...data, atualizado_em: new Date() })
     .where(eq(experimentos.id, id));
+}
+
+export async function duplicateExperimento(id: number, novoTitulo?: string): Promise<number> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+
+  const original = await getExperimentoById(id);
+  if (!original) throw new Error("Experimento não encontrado");
+
+  const baseTitulo = (novoTitulo?.trim() || `${original.titulo} - Cópia`);
+  const baseSlug = baseTitulo
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)+/g, "") || `experimento-${id}`;
+
+  const novoSlug = `${baseSlug}-${nanoid(6).toLowerCase()}`;
+
+  return await db.transaction(async (tx) => {
+    const [novo] = await tx
+      .insert(experimentos)
+      .values({
+        admin_id: original.admin_id,
+        titulo: baseTitulo,
+        descricao: original.descricao,
+        slug: novoSlug,
+        ativo: false,
+        criado_por: original.criado_por,
+      })
+      .returning({ id: experimentos.id });
+
+    const amostrasOriginais = await tx
+      .select()
+      .from(amostras)
+      .where(eq(amostras.experimento_id, id))
+      .orderBy(amostras.ordem);
+
+    if (amostrasOriginais.length > 0) {
+      await tx.insert(amostras).values(
+        amostrasOriginais.map((a) => ({
+          experimento_id: novo.id,
+          codigo: a.codigo,
+          nome: a.nome,
+          descricao: a.descricao,
+          ordem: a.ordem,
+        }))
+      );
+    }
+
+    const atributosOriginais = await tx
+      .select()
+      .from(atributos)
+      .where(eq(atributos.experimento_id, id))
+      .orderBy(atributos.ordem);
+
+    if (atributosOriginais.length > 0) {
+      await tx.insert(atributos).values(
+        atributosOriginais.map((a) => ({
+          experimento_id: novo.id,
+          nome: a.nome,
+          descricao: a.descricao,
+          label_min: a.label_min,
+          label_max: a.label_max,
+          ordem: a.ordem,
+        }))
+      );
+    }
+
+    return novo.id;
+  });
+}
+
+export async function clearExperimentResults(experimento_id: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not connected");
+
+  await db.transaction(async (tx) => {
+    const sessoesDoExperimento = await tx
+      .select({ id: sessoes.id })
+      .from(sessoes)
+      .where(eq(sessoes.experimento_id, experimento_id));
+
+    if (sessoesDoExperimento.length > 0) {
+      await tx.delete(respostas).where(
+        sql`${respostas.sessao_id} IN (SELECT id FROM sessoes WHERE experimento_id = ${experimento_id})`
+      );
+    }
+
+    await tx.delete(sessoes).where(eq(sessoes.experimento_id, experimento_id));
+  });
 }
 
 export async function deleteExperimento(id: number): Promise<void> {
@@ -341,17 +433,17 @@ export async function getRespostasCompletas(experimento_id: number) {
   if (!db) return [];
   return db
     .select({
-  sessao_id: sessoes.id,
-  nome: sessoes.nome,
-  idade: sessoes.idade,
-  cidade: sessoes.cidade,
-  estado: sessoes.estado,
-  pais: sessoes.pais,
-  tempo_total: sessoes.tempo_total,
-  atributoNome: atributos.nome,
-  amostraNome: amostras.nome,
-  valor: respostas.valor,
-})
+      sessao_id: sessoes.id,
+      nome: sessoes.nome,
+      idade: sessoes.idade,
+      cidade: sessoes.cidade,
+      estado: sessoes.estado,
+      pais: sessoes.pais,
+      tempo_total: sessoes.tempo_total,
+      atributoNome: atributos.nome,
+      amostraNome: amostras.nome,
+      valor: respostas.valor,
+    })
     .from(sessoes)
     .innerJoin(respostas, eq(respostas.sessao_id, sessoes.id))
     .innerJoin(atributos, eq(atributos.id, respostas.atributo_id))

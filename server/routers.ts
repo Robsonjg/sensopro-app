@@ -308,8 +308,19 @@ export const appRouter = router({
       }),
 
     update: protectedProcedure
-      .input(z.object({ id: z.number(), nome: z.string().optional() }))
-      .mutation(({ input }) => updateAmostra(input.id, input)),
+      .input(
+        z.object({
+          id: z.number(),
+          nome: z.string().optional(),
+          codigo: z.string().optional(),
+          descricao: z.string().optional(),
+          ordem: z.number().optional(),
+        })
+      )
+      .mutation(({ input }) => {
+        const { id, ...data } = input;
+        return updateAmostra(id, data);
+      }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -336,8 +347,20 @@ export const appRouter = router({
       }),
 
     update: protectedProcedure
-      .input(z.object({ id: z.number(), nome: z.string().optional() }))
-      .mutation(({ input }) => updateAtributo(input.id, input)),
+      .input(
+        z.object({
+          id: z.number(),
+          nome: z.string().optional(),
+          descricao: z.string().optional(),
+          label_min: z.string().optional(),
+          label_max: z.string().optional(),
+          ordem: z.number().optional(),
+        })
+      )
+      .mutation(({ input }) => {
+        const { id, ...data } = input;
+        return updateAtributo(id, data);
+      }),
 
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))

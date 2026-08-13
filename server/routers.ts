@@ -21,6 +21,7 @@ import {
   getAdminById,
   getExperimentoById,
   getExperimentoBySlug,
+  getAmostraByCodigoGlobal,
   getRespostasCompletas,
   listAdmins,
   listAmostras,
@@ -442,14 +443,71 @@ export const appRouter = router({
         };
       }),
 
+    buscarAmostraGlobal: publicProcedure
+      .input(
+        z.object({
+          codigo: z.string().min(1),
+        })
+      )
+      .query(async ({ input }) => {
+        const codigo = input.codigo.trim();
+
+        const amostra = await getAmostraByCodigoGlobal(codigo);
+
+        if (!amostra) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Amostra não encontrada.",
+          });
+        }
+
+        const experimento = await getExperimentoById(amostra.experimento_id);
+
+        if (!experimento || !experimento.ativo) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Experimento não encontrado ou inativo.",
+          });
+        }
+
+        return {
+          amostra,
+          experimento,
+          atributos: await listAtributos(experimento.id),
+        };
+      }),
+
     iniciarSessao: publicProcedure
-      .input(z.object({ experimento_id: z.number(), idade: z.number(), cidade: z.string(), estado: z.string(), pais: z.string() }))
+      .input(
+        z.object({
+          experimento_id: z.number(),
+          nome: z.string().trim().min(1, "Nome é obrigatório"),
+        })
+      )
       .mutation(async ({ input }) => {
         const exp = await getExperimentoById(input.experimento_id);
-        if (!exp) throw new TRPCError({ code: "NOT_FOUND" });
+
+        if (!exp) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Experimento não encontrado.",
+          });
+        }
+
+        if (!exp.ativo) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Este experimento está inativo.",
+          });
+        }
 
         return createSessao({
-          ...input,
+          experimento_id: input.experimento_id,
+          nome: input.nome.trim(),
+          idade: null,
+          cidade: null,
+          estado: null,
+          pais: null,
           admin_id: exp.admin_id,
           finalizado: false,
         });

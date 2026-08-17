@@ -81,42 +81,190 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
 
   function handleExport() {
     if (!exportData || !data) return;
+
     const { amostras, atributos, respostas } = exportData;
 
-    const rows = respostas.map((r: any) => {
-      const am = amostras.find((a: any) => a.id === r.amostra_id);
-      const at = atributos.find((a: any) => a.id === r.atributo_id);
+    const valorFormatado = (valor: unknown) => {
+      const n = Number(valor);
+      return Number.isFinite(n) ? Number(n.toFixed(2)) : "";
+    };
+
+    const ajustarLarguras = (ws: XLSX.WorkSheet, rows: Record<string, unknown>[]) => {
+      if (!rows.length) return;
+
+      const headers = Object.keys(rows[0]);
+
+      ws["!cols"] = headers.map((header) => {
+        let max = header.length;
+
+        for (const row of rows) {
+          const value = row[header];
+          const length = String(value ?? "").length;
+          if (length > max) max = length;
+        }
+
+        return { wch: Math.min(Math.max(max + 2, 12), 42) };
+      });
+
+      ws["!autofilter"] = {
+        ref: ws["!ref"] || `A1:${XLSX.utils.encode_col(headers.length - 1)}1`,
+      };
+    };
+
+    // ============================================================
+    // 1. RESULTADOS ORGANIZADOS
+    // Uma linha por sessão/avaliador + amostra.
+    // Cada atributo vira uma coluna.
+    // ============================================================
+    const resultadosMap = new Map<string, Record<string, unknown>>();
+
+    respostas.forEach((r: any) => {
+      const sessaoId = r.sessao_id ?? r.sessaoId ?? "";
+      const amostra =
+        amostras.find((a: any) => a.id === (r.amostra_id ?? r.amostraId)) ??
+        amostras.find((a: any) => a.nome === r.amostraNome);
+
+      const atributo =
+        atributos.find((a: any) => a.id === (r.atributo_id ?? r.atributoId)) ??
+        atributos.find((a: any) => a.nome === r.atributoNome);
+
+      const amostraCodigo = amostra?.codigo ?? "";
+      const amostraNome = amostra?.nome ?? r.amostraNome ?? "";
+
+      const key = `${sessaoId}__${amostra?.id ?? amostraCodigo ?? amostraNome}`;
+
+      if (!resultadosMap.has(key)) {
+        resultadosMap.set(key, {
+          Nome: r.nome ?? "",
+          "Sessão ID": sessaoId,
+          "Amostra (Código)": amostraCodigo,
+          "Amostra (Nome)": amostraNome,
+          "Tempo (s)": r.tempo_total ?? r.tempoTotal ?? "",
+        });
+      }
+
+      const row = resultadosMap.get(key)!;
+      const nomeAtributo = atributo?.nome ?? r.atributoNome;
+
+      if (nomeAtributo) {
+        row[nomeAtributo] = valorFormatado(r.valor);
+      }
+    });
+
+    const resultadosRows = Array.from(resultadosMap.values()).sort((a, b) => {
+      const amostraA = String(a["Amostra (Código)"] ?? "");
+      const amostraB = String(b["Amostra (Código)"] ?? "");
+      const nomeA = String(a["Nome"] ?? "");
+      const nomeB = String(b["Nome"] ?? "");
+
+      return amostraA.localeCompare(amostraB, "pt-BR", { numeric: true }) ||
+        nomeA.localeCompare(nomeB, "pt-BR");
+    });
+
+    // ============================================================
+    // 2. MÉDIAS POR ATRIBUTO
+    // Mesmo formato visual/lógico do dashboard.
+    // ============================================================
+    const mediasRows: Record<string, unknown>[] = atributos.map((attr: any) => {
+      const row: Record<string, unknown> = {
+        Atributo: attr.nome,
+      };
+
+      amostras.forEach((am: any) => {
+        const media = data.medias.find(
+          (x: any) =>
+            (x.atributo_id ?? x.atributoId) === attr.id &&
+            (x.amostra_id ?? x.amostraId) === am.id
+        );
+
+        row[am.codigo] = media
+          ? Number(Number(media.media).toFixed(2))
+          : "";
+      });
+
+      return row;
+    });
+
+    // ============================================================
+    // 3. RESUMO POR AMOSTRA
+    // Média geral de todos os atributos de cada amostra.
+    // ============================================================
+    const resumoRows = amostras.map((am: any) => {
+      const mediasAmostra = data.medias
+        .filter(
+          (x: any) => (x.amostra_id ?? x.amostraId) === am.id
+        )
+        .map((x: any) => Number(x.media))
+        .filter((v: number) => Number.isFinite(v));
+
+      const mediaGeral = mediasAmostra.length
+        ? mediasAmostra.reduce((acc: number, valor: number) => acc + valor, 0) /
+          mediasAmostra.length
+        : 0;
+
       return {
-        "Sessão ID": r.sessao_id,
-        Nome: r.nome ?? "",
-        Idade: r.idade ?? "",
-        Cidade: r.cidade ?? "",
-        Estado: r.estado ?? "",
-        País: r.pais ?? "",
-        "Data/Hora": r.finalizado_em ? new Date(r.finalizado_em).toLocaleString("pt-BR") : "",
-        "Tempo (s)": r.tempo_total ?? "",
-        "Amostra (Código)": am?.codigo ?? "",
-        "Amostra (Nome)": am?.nome ?? "",
-        Atributo: at?.nome ?? "",
-        Valor: r.valor,
+        "Amostra (Código)": am.codigo,
+        "Amostra (Nome)": am.nome,
+        "Média Geral": Number(mediaGeral.toFixed(2)),
+        "Quantidade de Atributos": mediasAmostra.length,
       };
     });
 
-    const mediasRows: Record<string, unknown>[] = [];
-    atributos.forEach((attr: any) => {
-      const row: Record<string, unknown> = { Atributo: attr.nome };
-      amostras.forEach((am: any) => {
-        const m = data.medias.find((x: any) => x.atributo_id === attr.id && x.amostra_id === am.id);
-        row[am.codigo] = m ? Number(Number(m.media).toFixed(2)) : "-";
-      });
-      mediasRows.push(row);
+    // ============================================================
+    // 4. DADOS BRUTOS
+    // Mantém todos os registros para análise estatística posterior.
+    // ============================================================
+    const dadosBrutosRows = respostas.map((r: any) => {
+      const amostra =
+        amostras.find((a: any) => a.id === (r.amostra_id ?? r.amostraId)) ??
+        amostras.find((a: any) => a.nome === r.amostraNome);
+
+      const atributo =
+        atributos.find((a: any) => a.id === (r.atributo_id ?? r.atributoId)) ??
+        atributos.find((a: any) => a.nome === r.atributoNome);
+
+      return {
+        "Sessão ID": r.sessao_id ?? r.sessaoId ?? "",
+        Nome: r.nome ?? "",
+        "Tempo (s)": r.tempo_total ?? r.tempoTotal ?? "",
+        "Amostra (Código)": amostra?.codigo ?? "",
+        "Amostra (Nome)": amostra?.nome ?? r.amostraNome ?? "",
+        Atributo: atributo?.nome ?? r.atributoNome ?? "",
+        Valor: valorFormatado(r.valor),
+      };
     });
 
+    // ============================================================
+    // CRIAÇÃO DO ARQUIVO
+    // ============================================================
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Respostas");
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(mediasRows), "Médias");
-    XLSX.writeFile(wb, `sensopro_${data.experimento.slug}_${Date.now()}.xlsx`);
-    toast.success("Planilha exportada com sucesso!");
+
+    const wsResultados = XLSX.utils.json_to_sheet(resultadosRows);
+    ajustarLarguras(wsResultados, resultadosRows);
+    XLSX.utils.book_append_sheet(wb, wsResultados, "Resultados");
+
+    const wsMedias = XLSX.utils.json_to_sheet(mediasRows);
+    ajustarLarguras(wsMedias, mediasRows);
+    XLSX.utils.book_append_sheet(wb, wsMedias, "Médias");
+
+    const wsResumo = XLSX.utils.json_to_sheet(resumoRows);
+    ajustarLarguras(wsResumo, resumoRows);
+    XLSX.utils.book_append_sheet(wb, wsResumo, "Resumo Amostras");
+
+    const wsBrutos = XLSX.utils.json_to_sheet(dadosBrutosRows);
+    ajustarLarguras(wsBrutos, dadosBrutosRows);
+    XLSX.utils.book_append_sheet(wb, wsBrutos, "Dados Brutos");
+
+    const slug =
+      data?.experimento?.slug?.replace(/[^a-z0-9-_]/gi, "_") ||
+      "experimento";
+
+    XLSX.writeFile(
+      wb,
+      `sensopro_${slug}_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+
+    toast.success("Planilha organizada exportada com sucesso!");
   }
 
   return (

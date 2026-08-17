@@ -84,9 +84,14 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
 
     const { amostras, atributos, respostas } = exportData;
 
-    const valorFormatado = (valor: unknown) => {
+    const valorBruto = (valor: unknown) => {
       const n = Number(valor);
-      return Number.isFinite(n) ? Number(n.toFixed(2)) : "";
+      return Number.isFinite(n) ? n : "";
+    };
+
+    const valorMedia = (valor: unknown) => {
+      const n = Number(valor);
+      return Number.isFinite(n) ? Number(n.toFixed(4)) : "";
     };
 
     const ajustarLarguras = (ws: XLSX.WorkSheet, rows: Record<string, unknown>[]) => {
@@ -147,7 +152,7 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
       const nomeAtributo = atributo?.nome ?? r.atributoNome;
 
       if (nomeAtributo) {
-        row[nomeAtributo] = valorFormatado(r.valor);
+        row[nomeAtributo] = valorBruto(r.valor);
       }
     });
 
@@ -178,7 +183,7 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
         );
 
         row[am.codigo] = media
-          ? Number(Number(media.media).toFixed(2))
+          ? valorMedia(media.media)
           : "";
       });
 
@@ -205,7 +210,7 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
       return {
         "Amostra (Código)": am.codigo,
         "Amostra (Nome)": am.nome,
-        "Média Geral": Number(mediaGeral.toFixed(2)),
+        "Média Geral": valorMedia(mediaGeral),
         "Quantidade de Atributos": mediasAmostra.length,
       };
     });
@@ -230,7 +235,7 @@ export default function DashboardView({ experimentoId, onSelectExp }: Props) {
         "Amostra (Código)": amostra?.codigo ?? "",
         "Amostra (Nome)": amostra?.nome ?? r.amostraNome ?? "",
         Atributo: atributo?.nome ?? r.atributoNome ?? "",
-        Valor: valorFormatado(r.valor),
+        Valor: valorBruto(r.valor),
       };
     });
 

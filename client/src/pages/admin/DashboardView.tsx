@@ -1009,7 +1009,7 @@ export default function DashboardView({
 
                     <Tooltip
                       formatter={(value: any) => [
-                        Number(value).toFixed(4),
+                        Number(value).toFixed(1),
                         "Intensidade média",
                       ]}
                       contentStyle={{
@@ -1109,7 +1109,7 @@ export default function DashboardView({
 
                     <Tooltip
                       formatter={(value: any) =>
-                        Number(value).toFixed(4)
+                        Number(value).toFixed(1)
                       }
                       contentStyle={{
                         borderRadius: "12px",
@@ -1202,7 +1202,7 @@ export default function DashboardView({
 
                     <Tooltip
                       formatter={(value: any) =>
-                        Number(value).toFixed(4)
+                        Number(value).toFixed(1)
                       }
                       contentStyle={{
                         borderRadius: "12px",

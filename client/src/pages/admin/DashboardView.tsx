@@ -153,9 +153,9 @@ export default function DashboardView({
       return Number.isFinite(n) ? n : "";
     };
 
-    const arredondar4 = (valor: unknown): number | "" => {
-      const n = Number(valor);
-      return Number.isFinite(n) ? Number(n.toFixed(4)) : "";
+    const arredondar1 = (valor: unknown): number | "" => {
+  const n = Number(valor);
+  return Number.isFinite(n) ? Number(n.toFixed(1)) : "";
     };
 
     const desvioPadraoAmostral = (valores: number[]): number | "" => {
@@ -226,7 +226,7 @@ export default function DashboardView({
           const cell = ws[address];
 
           if (cell && cell.t === "n") {
-            cell.z = "0.0000";
+            cell.z = "0.0";;
           }
         }
       });
@@ -308,7 +308,7 @@ export default function DashboardView({
             : NaN;
 
           row[amostra.codigo] = Number.isFinite(media)
-            ? arredondar4(media)
+            ? arredondar1(media)
             : "";
         });
 
@@ -343,7 +343,7 @@ export default function DashboardView({
           const dp = desvioPadraoAmostral(valores);
 
           row[amostra.codigo] =
-            dp === "" ? "" : arredondar4(dp);
+            dp === "" ? "" : arredondar1(dp);
         });
 
         return row;
@@ -401,7 +401,7 @@ export default function DashboardView({
         "Amostra (Código)": amostra.codigo,
         "Amostra (Nome)": amostra.nome,
         "Média Geral": Number.isFinite(mediaGeral)
-          ? arredondar4(mediaGeral)
+          ? arredondar1(mediaGeral)
           : "",
         "Nº Avaliadores": avaliadoresUnicos,
         "Nº Atributos com Dados": mediasDaAmostra.length,
@@ -461,12 +461,12 @@ export default function DashboardView({
       },
       {
         Campo: "Precisão das estatísticas",
-        Valor: "4 casas decimais",
+        Valor: "1 casas decimais",
       },
       {
         Campo: "Observação",
         Valor:
-          "Dados brutos preservados sem arredondamento intermediário. Médias e desvios são apresentados com 4 casas decimais.",
+      "Dados brutos preservados sem arredondamento intermediário. Médias e desvios são apresentados com 1 casa decimal.",
       },
     ];
 

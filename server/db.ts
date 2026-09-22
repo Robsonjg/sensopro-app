@@ -410,15 +410,23 @@ export async function finalizarSessao(
 }
 
 // ─── Respostas ────────────────────────────────────────────────────────────────
+function toOneDecimal(value: unknown): number {
+  const numberValue = Number(value);
+  return Number(Number.isFinite(numberValue) ? numberValue.toFixed(1) : 0);
+}
+
 export async function upsertResposta(data: InsertResposta): Promise<void> {
   const db = await getDb();
   if (!db) return;
+
+  const valor = toOneDecimal(data.valor);
+
   await db
     .insert(respostas)
-    .values(data)
+    .values({ ...data, valor })
     .onConflictDoUpdate({
       target: [respostas.sessao_id, respostas.atributo_id, respostas.amostra_id],
-      set: { valor: data.valor },
+      set: { valor },
     });
 }
 

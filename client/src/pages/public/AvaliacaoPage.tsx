@@ -186,6 +186,10 @@ export default function AvaliacaoPage() {
     }
   }
 
+  function handleVoltarDasObservacoes() {
+    setShowObservacoes(false);
+  }
+
   async function handleFinalizarComObservacoes() {
     if (!sessao) return;
 
@@ -421,7 +425,17 @@ export default function AvaliacaoPage() {
                   />
                 </div>
 
-                <div className="flex items-center justify-end mt-8">
+                <div className="flex items-center justify-between mt-8">
+                  <Button
+                    variant="ghost"
+                    onClick={handleVoltarDasObservacoes}
+                    disabled={submitting}
+                    className="rounded-full gap-2"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Voltar
+                  </Button>
+
                   <Button
                     onClick={handleFinalizarComObservacoes}
                     disabled={submitting}

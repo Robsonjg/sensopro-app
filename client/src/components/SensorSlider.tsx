@@ -5,6 +5,7 @@ interface SensorSliderProps {
   onChange: (value: number) => void;
   min?: number;
   max?: number;
+  step?: number;
 }
 
 export default function SensorSlider({
@@ -12,6 +13,7 @@ export default function SensorSlider({
   onChange,
   min = 0,
   max = 100,
+  step = 0.1,
 }: SensorSliderProps) {
   const sliderRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -34,7 +36,8 @@ export default function SensorSlider({
     const rect = sliderRef.current.getBoundingClientRect();
     const x = clientX - rect.left;
     const newPercentage = Math.max(0, Math.min(100, (x / rect.width) * 100));
-    const newValue = Math.round((newPercentage / 100) * (max - min) + min);
+    const rawValue = (newPercentage / 100) * (max - min) + min;
+    const newValue = Number((Math.round(rawValue / step) * step).toFixed(1));
 
     onChange(newValue);
     setIsInteracting(true);
@@ -81,7 +84,7 @@ export default function SensorSlider({
         document.removeEventListener("touchend", handleTouchEnd);
       };
     }
-  }, [isDragging, min, max]);
+  }, [isDragging, min, max, step]);
 
   return (
     <div className="w-full space-y-8">
